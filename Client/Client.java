@@ -1,5 +1,8 @@
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class Client {
     private static final String SERVER_IP = "127.0.0.1";
@@ -9,7 +12,6 @@ public class Client {
         try {
             Socket socket = new Socket(SERVER_IP, PORT);
             System.out.println("Conectado al servidor.");
-
             String message;
             BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -21,14 +23,14 @@ public class Client {
                     System.out.print("Ingrese nombre de usuario: ");
                     String name = userInput.readLine();
                     out.println(name);
-                }
-                else if (message.startsWith("NAMEACCEPTED")) {
+                } else if (message.startsWith("NAMEACCEPTED")) {
                     System.out.println("Nombre aceptado!!");
-                    break;}
+                    break;
+                }
             }
-                   
+
             //creamos el objeto lector e iniciamos el hilo
-            Lector lector = new Lector(in);
+            Lector lector = new Lector(in, out);
             new Thread(lector).start();
 
             //estar atento a la entrada del usuario          

@@ -12,6 +12,7 @@ public class Server {
   public static void main(String[] args) {
     int PORT = 6789;
     Chatters clientes = new Chatters();
+    Groups grupos = new Groups();
 
     try {
       ServerSocket serverSocket = new ServerSocket(PORT);
@@ -20,9 +21,9 @@ public class Server {
       while (true) {
         Socket clientSocket = serverSocket.accept();
         System.out.println("Nuevo cliente conectado: " + clientSocket);
-        //crea el objeto Runable
-        ClientHandler clientHandler = new ClientHandler(clientSocket, clientes);
-        //inicia el hilo con el objeto Runnable
+        // crea el objeto Runable
+        ClientHandler clientHandler = new ClientHandler(clientSocket, clientes, grupos);
+        // inicia el hilo con el objeto Runnable
         new Thread(clientHandler).start();
       }
     } catch (IOException e) {

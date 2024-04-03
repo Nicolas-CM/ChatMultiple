@@ -1,25 +1,68 @@
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 
-public class Lector implements Runnable{
+public class Lector implements Runnable {
     String message;
     BufferedReader in;
-    public Lector(BufferedReader in){
-        this.in=in;
+    PrintWriter out;
+    BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
+
+    public Lector(BufferedReader in, PrintWriter out) {
+        this.in = in;
+        this.out = out;
     }
 
     @Override
     public void run() {
-        //leer la linea que envia el servidor e imprimir en pantalla
-        try { 
-            
+        // leer la linea que envia el servidor e imprimir en pantalla
+        try {
+
             while ((message = in.readLine()) != null) {
-                System.out.println(message);
+                switch (message) {
+                    case "CREATENEWGROUP":
+                        createNewGroup();
+                        break;
+                    case "MENU":
+                        mainMenu();
+
+                    default:
+                        System.out.println("Información extraña recibida del Server");
+                        break;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }      
-    
+        }
+
+    }
+
+    private void mainMenu() throws IOException {
+        while ((message = in.readLine()) != null) {
+            if (message.equals("FINISH")) {
+                createNewGroup();
+            } else {
+                System.out.println(message);
+            }
+
+        }
+    }
+
+    private void createNewGroup() throws IOException {
+        while ((message = in.readLine()) != null) {
+            // repetir el ciclo hasta que no ingrese un nombre valido
+            if (message.startsWith("SUBMITNAME")) {
+                System.out.println("Ingrese nombre del grupo: ");
+                String name = userInput.readLine();
+                out.println(name);
+            } else if (message.startsWith("NAMEACCEPTED")) {
+                System.out.println("Nombre aceptado del grupo!!");
+                break;
+            } else {
+                System.out.println("Ni idesaaa");
+            }
+        }
     }
 
 }

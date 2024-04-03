@@ -1,6 +1,4 @@
-import java.util.Set;
 import java.io.PrintWriter;
-import java.net.Socket;
 
 //
 public class Person {

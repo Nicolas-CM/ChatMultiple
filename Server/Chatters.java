@@ -1,9 +1,6 @@
-import java.util.Set;
 import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 
 
 public class Chatters{
@@ -11,7 +8,18 @@ public class Chatters{
 
     private Set<Person> clientes = new HashSet<>();
      
-    public Chatters(){
+    public Chatters() {
+    }
+
+    public Person getPerson(String name) {
+        if (existeUsr(name)) {
+            for (Person person : clientes) {
+                if (person.getName().equals(name)) {
+                    return person;
+                }
+            }
+        }
+        return null;
     }
 
     public boolean existeUsr(String name){
@@ -53,7 +61,7 @@ public class Chatters{
             if(nameDest.equals(p.getName())){
                 p.getOut().println("[Chat privado de "+nameSrc + "]: "+message);
                 break;}
-     }
+        }
 
 
    }
