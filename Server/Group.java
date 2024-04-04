@@ -6,14 +6,23 @@ import java.util.Set;
 public class Group {
 
     private String name;
-    private List<Message> mensajes = new ArrayList<>();
     private Set<Person> miembros = new HashSet<>();
     private Person creator;
+    private ChatHistory chatHistory;
 
     public Group(String name, Person creator) {
         this.name = name;
         this.creator = creator;
         this.miembros.add(creator);
+        this.chatHistory = new ChatHistory(name);
+    }
+
+    public String getHeadHistorial() {
+        return chatHistory.getHeadHistorial();
+    }
+
+    public String getAllMessages() {
+        return chatHistory.getAllMessages();
     }
 
     public Person getPerson(String name) {
@@ -38,6 +47,27 @@ public class Group {
         return response;
     }
 
+    public String printMembers() {
+
+        String mensajeMiembros = "";
+
+        List<Person> listaPersonas = new ArrayList<>(miembros);
+
+        if (listaPersonas.size() == 0) {
+            return "El grupo esta vacio";
+        } else {
+
+            for (int i = 0; i < listaPersonas.size(); i++) {
+                int counterPerson = 0;
+                mensajeMiembros += ("Miembro #" + (counterPerson + 1) + ": " + listaPersonas.get(i).getName());
+            }
+
+            return mensajeMiembros;
+
+        }
+
+    }
+
     public String getName() {
         return name;
     }
@@ -46,13 +76,6 @@ public class Group {
         this.name = name;
     }
 
-    public List<Message> getMensajes() {
-        return mensajes;
-    }
-
-    public void setMensajes(List<Message> mensajes) {
-        this.mensajes = mensajes;
-    }
 
     public Set<Person> getMiembros() {
         return miembros;

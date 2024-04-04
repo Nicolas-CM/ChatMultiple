@@ -16,7 +16,6 @@ public class ClientHandler implements Runnable {
   Chatters clientes;
   Groups grupos;
 
-
   public ClientHandler(Socket socket, Chatters clientes, Groups grupos) {
     this.clientes = clientes;
     this.clientSocket = socket;
@@ -29,7 +28,6 @@ public class ClientHandler implements Runnable {
     }
 
   }
-
 
   @Override
   public void run() {
@@ -151,7 +149,7 @@ public class ClientHandler implements Runnable {
           createNewGroup();
           break;
         case 2:
-          out.println("JOINTOGROUP");
+          // out.println("JOINTOGROUP");
           joinToGroup();
           break;
         case 3:
@@ -167,38 +165,126 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void writeToGroup() {
+  private void chatMenu(Group group) throws IOException {
+    int optionMenu = 0;
+    boolean exit = false;
+    do {
+      out.println(
+          "MENU\n----------\nCHAT\n----------" + group.getHeadHistorial()
+              + "\n Seleccione una opción:\n 0) Salir del menú\n 1) Más Mensajes" +
+              "\n 2) Escuchar un audio" +
+              "\n 3) Enviar Mensajes / Llamar" +
+              "\n-------------------");
+      optionMenu = validateIntegerOption();
 
+      switch (optionMenu) {
+        case 0:
+          exit = true;
+          break;
+        case 1:
+          out.println(group.getAllMessages());
+          break;
+        case 2:
+          // joinToGroup();
+          break;
+        case 3:
+          sendMenu();
+          break;
+        default:
+          out.println("------------------\nOpción incorrecta!");
+          break;
+      }
+    } while (exit == false);
   }
 
-  private void joinToGroup() throws IOException {
+  private void sendMenu() {
+    int optionMenu = 0;
+    boolean exit = false;
+    do {
+      out.println(
+          "MENU\n----------\nMenu Enviar\n----------"
+              + "\n Seleccione una opción de lo que dese enviar:\n 0) Salir del menú\n 1) Mensaje" +
+              "\n 2) Audio" +
+              "\n 3) Hacer Llamada" +
+              "\n-------------------");
+      optionMenu = validateIntegerOption();
+
+      switch (optionMenu) {
+        case 0:
+          exit = true;
+          break;
+        case 1:
+          sendMenu();
+          break;
+        case 2:
+          // joinToGroup();
+          break;
+        case 3:
+          // sendMenu();
+          break;
+        default:
+          out.println("------------------\nOpción incorrecta!");
+          break;
+      }
+    } while (exit == false);
+  }
+
+  private void writeToGroup() throws IOException {
+    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
 
     out.println(
         "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
 
-    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+    // Imprimir grupos
+    out.println(grupos.printMyGroups(clientName));
 
-    int counter = 0;
-    for (int i = 0; i < listaGrupos.size(); i++) {
-      out.println((counter + 1) + ") " + listaGrupos.get(i).getName());
-
+    if (grupos.printMyGroups(clientName).equals("No existen grupos creados")) {
+      groupMenu();
+      return;
     }
-    optionMenu = validateIntegerOption();
+
+    optionMenu = validateRange(listaGrupos);
 
     if (optionMenu == 0) {
       groupMenu();
+      return;
     }
 
-    /*
-     * while (!(optionMenu <= listaGrupos.size() + 1) & !(optionMenu >= 0)) {
-     * out.println("Ingrese una opcion valida");
-     * optionMenu = validateIntegerOption();
-     * 
-     * }
-     * /
-     **/
+    // Iniciando chat con el grupo y enviando los mensajes al historial del grupo
+    // selecccionado
+    if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
+      // El usuario si está en el grupo y puede entrar al menú del Chat
+      chatMenu(listaGrupos.get(optionMenu - 1));
+    } else {
+      out.println("No estás en este grupo, bye bye");
+    }
 
+  }
+
+  private void joinToGroup() throws IOException {
+    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+    int optionMenu = 0;
+
+    out.println(
+        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
+
+    // Imprimir grupos
+    out.println(grupos.printGroups());
+
+    if (grupos.printGroups().equals("No existen grupos creados")) {
+      groupMenu();
+    }
+
+    optionMenu = validateRange(listaGrupos);
+
+    if (optionMenu == 0) {
+      groupMenu();
+      return;
+    }
+
+
+    // Agregando usuario al grupo
     if (listaGrupos.get(optionMenu - 1).existeUsr(listaGrupos.get(optionMenu - 1).getCreator().getName())) {
       out.println("El usuario creador ya pertenece al grupo");
 
@@ -209,6 +295,19 @@ public class ClientHandler implements Runnable {
       out.println("\n al grupo: " + listaGrupos.get(optionMenu - 1).getName());
       listaGrupos.get(optionMenu - 1).getMiembros().add(clientes.getPerson(clientName));
     }
+
+  }
+
+  private int validateRange(List listToValidate) {
+
+    int option = validateIntegerOption();
+
+    while (!(option <= listToValidate.size() + 1) & !(option >= 0)) {
+      out.println("Ingrese una opcion valida");
+      option = validateIntegerOption();
+    }
+
+    return option;
 
   }
 
@@ -236,44 +335,25 @@ public class ClientHandler implements Runnable {
   }
 
   private void membersOfAGroup() throws IOException {
+    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+
     int optionMenu = 0;
 
     out.println(
         "MENU\n----------\nVer miembros de un grupo\n---------- Seleccione un grupo para ver sus miembros:\n 0) Salir del menú");
 
-    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+    // Imprimir grupos
+    out.println(grupos.printGroups());
 
-    int counter = 0;
-    for (int i = 0; i < listaGrupos.size(); i++) {
-      out.println((counter + 1) + ") " + listaGrupos.get(i).getName());
-
-    }
-    optionMenu = validateIntegerOption();
+    optionMenu = validateRange(listaGrupos);
 
     if (optionMenu == 0) {
       groupMenu();
+      return;
     }
 
-    /*
-     * while (!(optionMenu <= listaGrupos.size() + 1) & !(optionMenu >= 0)) {
-     * out.println("Ingrese una opcion valida");
-     * optionMenu = validateIntegerOption();
-     * 
-     * }
-     * /
-     **/
-
-    List<Person> listaPersonas = new ArrayList<>(listaGrupos.get(optionMenu - 1).getMiembros());
-    if (listaPersonas.size() == 0) {
-      out.println("El grupo esta vacio");
-    } else {
-
-      for (int i = 0; i < listaPersonas.size(); i++) {
-        int counterPerson = 0;
-        out.println("Miembro #" + (counterPerson + 1) + ": " + " " + listaPersonas.get(i).getName());
-      }
-
-    }
+    // Imprimir personas de los grupos
+    out.println(listaGrupos.get(optionMenu - 1).printMembers());
 
   }
 

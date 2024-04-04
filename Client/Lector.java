@@ -45,11 +45,6 @@ public class Lector implements Runnable {
                     System.out.println(message);
                     break;
             }
-            if (message.equals("CREATENEWGROUP")) {
-                createNewGroup();
-            } else {
-                System.out.println(message);
-            }
 
         }
     }

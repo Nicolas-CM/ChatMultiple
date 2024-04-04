@@ -1,5 +1,7 @@
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class Groups {
@@ -37,6 +39,44 @@ public class Groups {
 
     public Set<Group> getGroups() {
         return grupos;
+    }
+
+    public String printMyGroups(String member) {
+        List<Group> listaGrupos = new ArrayList<>(grupos);
+
+        String gruposMensaje = "";
+
+        int counter = 0;
+        if (listaGrupos.size() == 0) {
+            return "No existen grupos creados";
+        } else {
+            for (int i = 0; i < listaGrupos.size(); i++) {
+                if (listaGrupos.get(i).existeUsr(member)) {
+                    gruposMensaje += ((counter + 1) + ") " + listaGrupos.get(i).getName() + "\n");
+                }
+
+            }
+
+            return gruposMensaje;
+        }
+    }
+
+    public String printGroups() {
+        List<Group> listaGrupos = new ArrayList<>(grupos);
+
+        String gruposMensaje = "";
+
+        int counter = 0;
+        if (listaGrupos.size() == 0) {
+            return "No existen grupos creados";
+        } else {
+            for (int i = 0; i < listaGrupos.size(); i++) {
+                gruposMensaje += ((counter + 1) + ") " + listaGrupos.get(i).getName() + "\n");
+
+            }
+
+            return gruposMensaje;
+        }
     }
 
 }
