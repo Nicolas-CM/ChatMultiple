@@ -21,9 +21,6 @@ public class Lector implements Runnable {
 
             while ((message = in.readLine()) != null) {
                 switch (message) {
-                    case "CREATENEWGROUP":
-                        createNewGroup();
-                        break;
                     case "MENU":
                         mainMenu();
 
@@ -40,7 +37,15 @@ public class Lector implements Runnable {
 
     private void mainMenu() throws IOException {
         while ((message = in.readLine()) != null) {
-            if (message.equals("FINISH")) {
+            switch (message) {
+                case "CREATENEWGROUP":
+                    createNewGroup();
+                    break;
+                default:
+                    System.out.println(message);
+                    break;
+            }
+            if (message.equals("CREATENEWGROUP")) {
                 createNewGroup();
             } else {
                 System.out.println(message);

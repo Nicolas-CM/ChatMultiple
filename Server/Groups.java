@@ -35,4 +35,8 @@ public class Groups {
         }
     }
 
+    public Set<Group> getGroups() {
+        return grupos;
+    }
+
 }
