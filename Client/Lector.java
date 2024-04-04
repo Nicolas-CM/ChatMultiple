@@ -50,19 +50,22 @@ public class Lector implements Runnable {
     }
 
     private void createNewGroup() throws IOException {
-        while ((message = in.readLine()) != null) {
-            // repetir el ciclo hasta que no ingrese un nombre valido
-            if (message.startsWith("SUBMITNAME")) {
-                System.out.println("Ingrese nombre del grupo: ");
-                String name = userInput.readLine();
-                out.println(name);
-            } else if (message.startsWith("NAMEACCEPTED")) {
-                System.out.println("Nombre aceptado del grupo!!");
-                break;
-            } else {
-                System.out.println("Ni idesaaa");
+        try {
+            while ((message = in.readLine()) != null) {
+                // repetir el ciclo hasta que no ingrese un nombre valido
+                System.out.println("Se recibió...." + message);
+                if (message.startsWith("SUBMITNAME")) {
+                    System.out.print("Ingrese nombre del grupo: ");
+
+                } else if (message.startsWith("NAMEACCEPTED")) {
+                    System.out.println("Nombre aceptado del grupo!!");
+                    break;
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
     }
 
 }

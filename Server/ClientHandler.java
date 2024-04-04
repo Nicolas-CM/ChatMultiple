@@ -174,10 +174,13 @@ public class ClientHandler implements Runnable {
         return;
 
       }
+      System.out.println("Va a sincronizzar");// -------------------------
       synchronized (groupName) {
         if (!groupName.isBlank() && !grupos.existeGroup(groupName)) {
           // grupos.broadcastMessage(groupName + " se ha unido al chat.");
-          out.println("NAMEACCEPTED " + groupName);
+          System.out.println("Entró a la condición");// -------------------
+          out.println("NAMEACCEPTED");
+          System.out.println("Se envió");
           grupos.addGroup(clientName, out, clientes.getPerson(clientName));
           break;
         }
