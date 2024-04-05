@@ -2,10 +2,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
 
 public class ClientHandler implements Runnable {
 
@@ -56,6 +63,9 @@ public class ClientHandler implements Runnable {
       }
     } catch (IOException e) {
       // e.printStackTrace();
+
+    } catch (Exception e) {
+      // e.printStackTrace();
     } finally {
       try {
         clientSocket.close();
@@ -87,12 +97,12 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  public void mainMenu() throws IOException {
+  public void mainMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
       out.println(
-          "MENU\n----------\nMenú principal\n---------- Seleccione una opción:\n 0) Salir del programa\n 1) Grupos" +
+          "MENU\n----------\nMenu principal\n---------- Seleccione una opcion:\n 0) Salir del programa\n 1) Grupos" +
               "\n 2) Privados" +
               "\n-------------------");
       optionMenu = validateIntegerOption();
@@ -108,7 +118,7 @@ public class ClientHandler implements Runnable {
           privateMenu();
           break;
         default:
-          out.println("------------------\nOpción incorrecta!");
+          out.println("------------------\nOpcion incorrecta!");
           break;
       }
     } while (exit == false);
@@ -128,12 +138,12 @@ public class ClientHandler implements Runnable {
     return option;
   }
 
-  private void groupMenu() throws IOException {
+  private void groupMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
       out.println(
-          "MENU\n----------\nMenú Grupos\n---------- Seleccione una opción:\n 0) Salir del menú\n 1) Crear un nuevo grupo"
+          "MENU\n----------\nMenu Grupos\n---------- Seleccione una opcion:\n 0) Salir del menu\n 1) Crear un nuevo grupo"
               +
               "\n 2) Ingresar a un grupo" +
               "\n 3) Escribir a un grupo" +
@@ -166,13 +176,13 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void chatMenu(Group group) throws IOException {
+  private void chatMenu(Group group) throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
       out.println(
           "MENU\n----------\nCHAT\n----------" + group.getHeadHistorial()
-              + "\n Seleccione una opción:\n 0) Salir del menú\n 1) Más Mensajes" +
+              + "\n Seleccione una opcion:\n 0) Salir del menu\n 1) Mas Mensajes" +
               "\n 2) Escuchar un audio" +
               "\n 3) Enviar Mensajes / Llamar" +
               "\n-------------------");
@@ -186,7 +196,7 @@ public class ClientHandler implements Runnable {
           out.println(group.getAllMessages());
           break;
         case 2:
-          // joinToGroup();
+          // listenAudio();
           break;
         case 3:
           sendMenu(group);
@@ -204,7 +214,7 @@ public class ClientHandler implements Runnable {
     do {
       out.println(
           "MENU\n----------\nMenu Enviar\n----------"
-              + "\n Seleccione una opción de lo que dese enviar:\n 0) Salir del menú\n 1) Mensaje" +
+              + "\n Seleccione una opción de lo que dese enviar:\n 0) Salir del menu\n 1) Mensaje" +
               "\n 2) Audio" +
               "\n 3) Hacer Llamada" +
               "\n-------------------");
@@ -221,7 +231,14 @@ public class ClientHandler implements Runnable {
           // joinToGroup();
           break;
         case 3:
-          // sendMenu();
+          out.println("CALLSTARTED");
+          new Thread(() -> {
+            try {
+              playCallToGroup();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+          }).start();
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
@@ -238,12 +255,34 @@ public class ClientHandler implements Runnable {
     out.println("\n --------- Mensaje enviado ---------\n");
   }
 
-  private void writeToGroup() throws IOException {
+  private static void playCallToGroup() throws Exception {
+    DatagramSocket serverSocket = new DatagramSocket(6789);
+    System.out.println("Server started. Waiting for clients...");
+
+    // Configurar la línea de audio para reproducir el audio recibido
+    AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
+    DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+    SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
+    sourceDataLine.open(audioFormat);
+    sourceDataLine.start();
+
+    byte[] receiveData = new byte[1024];
+
+    while (true) {
+      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      serverSocket.receive(receivePacket);
+
+      // Reproducir audio
+      sourceDataLine.write(receivePacket.getData(), 0, receivePacket.getLength());
+    }
+  }
+
+  private void writeToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
 
     out.println(
-        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
+        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
 
     // Imprimir grupos
     out.println(grupos.printMyGroups(clientName));
@@ -266,17 +305,17 @@ public class ClientHandler implements Runnable {
       // El usuario si está en el grupo y puede entrar al menú del Chat
       chatMenu(listaGrupos.get(optionMenu - 1));
     } else {
-      out.println("No estás en este grupo, bye bye");
+      out.println("No estas en este grupo, bye bye");
     }
 
   }
 
-  private void joinToGroup() throws IOException {
+  private void joinToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
 
     out.println(
-        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
+        "MENu\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
 
     // Imprimir grupos
     out.println(grupos.printGroups());
@@ -292,7 +331,6 @@ public class ClientHandler implements Runnable {
       return;
     }
 
-
     // Agregando usuario al grupo
     if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
       out.println("El usuario ya esta en el grupo no puede ingresar");
@@ -307,7 +345,7 @@ public class ClientHandler implements Runnable {
 
     int option = validateIntegerOption();
 
-    while (!(option <= listToValidate.size() + 1) & !(option >= 0)) {
+    while ((option > listToValidate.size() + 1) || (option < 0)) {
       out.println("Ingrese una opcion valida");
       option = validateIntegerOption();
     }
@@ -339,13 +377,13 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void membersOfAGroup() throws IOException {
+  private void membersOfAGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
 
     int optionMenu = 0;
 
     out.println(
-        "MENU\n----------\nVer miembros de un grupo\n---------- Seleccione un grupo para ver sus miembros:\n 0) Salir del menú");
+        "MENU\n----------\nVer miembros de un grupo\n---------- Seleccione un grupo para ver sus miembros:\n 0) Salir del menu");
 
     // Imprimir grupos
     out.println(grupos.printGroups());
@@ -362,12 +400,12 @@ public class ClientHandler implements Runnable {
 
   }
 
-  private void privateMenu() throws IOException {
+  private void privateMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
       out.println(
-          "MENU\n----------\nMenú Privados\n---------- Seleccione una opción:\n 0) Salir del menú\n 1) Crear un nuevo chat"
+          "MENU\n----------\nMenu Privados\n---------- Seleccione una opcion:\n 0) Salir del menu\n 1) Crear un nuevo chat"
               +
               "\n 2) Escribir a un chat" +
               "\n-------------------");

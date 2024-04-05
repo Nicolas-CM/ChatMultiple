@@ -32,8 +32,8 @@ public class ChatHistory {
         if (mensajes.size() == 0) {
             return "\n No existen mensajes en Historial: " + this.getGroupOrPrivate();
         }
-        int startIndex = Math.max(0, mensajes.size() - 10); // Índice de inicio
-        int endIndex = mensajes.size(); // Índice de fin (último mensaje)
+        int startIndex = Math.max(0, mensajes.size() - 10); // Indice de inicio
+        int endIndex = mensajes.size(); // Indice de fin (último mensaje)
         // Se crea una sublista con los últimos 10 mensajes
         List<Message> head = mensajes.subList(startIndex, endIndex);
         String historialHead = " \n\nHISTORIAL: " + this.getGroupOrPrivate() + "\n MENSAJES: ";
