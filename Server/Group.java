@@ -7,6 +7,7 @@ public class Group {
 
     private String name;
     private Set<Person> miembros = new HashSet<>();
+
     private Person creator;
     private ChatHistory chatHistory;
 
@@ -15,6 +16,10 @@ public class Group {
         this.creator = creator;
         this.miembros.add(creator);
         this.chatHistory = new ChatHistory(name);
+    }
+
+    public void sendMessage(Message m) {
+        chatHistory.sendMessage(m);
     }
 
     public String getHeadHistorial() {
@@ -59,7 +64,7 @@ public class Group {
 
             for (int i = 0; i < listaPersonas.size(); i++) {
                 int counterPerson = 0;
-                mensajeMiembros += ("Miembro #" + (counterPerson + 1) + ": " + listaPersonas.get(i).getName());
+                mensajeMiembros += ("\n Miembro #" + (counterPerson + 1) + ": " + listaPersonas.get(i).getName());
             }
 
             return mensajeMiembros;

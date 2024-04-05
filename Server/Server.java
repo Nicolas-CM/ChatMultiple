@@ -12,7 +12,7 @@ public class Server {
   public static void main(String[] args) {
     int PORT = 6789;
     Chatters clientes = new Chatters();
-    Groups grupos = new Groups();
+    Comunity grupos = new Comunity();
 
     try {
       ServerSocket serverSocket = new ServerSocket(PORT);

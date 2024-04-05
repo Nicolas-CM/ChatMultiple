@@ -4,10 +4,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Groups {
+public class Comunity {
     private Set<Group> grupos = new HashSet<>();
 
-    public Groups() {
+    public Comunity() {
     }
 
     public boolean existeGroup(String name) {

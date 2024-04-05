@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,9 +15,9 @@ public class ClientHandler implements Runnable {
   private String clientName;
   private String groupName;
   Chatters clientes;
-  Groups grupos;
+  Comunity grupos;
 
-  public ClientHandler(Socket socket, Chatters clientes, Groups grupos) {
+  public ClientHandler(Socket socket, Chatters clientes, Comunity grupos) {
     this.clientes = clientes;
     this.clientSocket = socket;
     this.grupos = grupos;
@@ -188,7 +189,7 @@ public class ClientHandler implements Runnable {
           // joinToGroup();
           break;
         case 3:
-          sendMenu();
+          sendMenu(group);
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
@@ -197,7 +198,7 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void sendMenu() {
+  private void sendMenu(Group group) throws IOException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -214,7 +215,7 @@ public class ClientHandler implements Runnable {
           exit = true;
           break;
         case 1:
-          sendMenu();
+          sendMessage(group);
           break;
         case 2:
           // joinToGroup();
@@ -227,6 +228,14 @@ public class ClientHandler implements Runnable {
           break;
       }
     } while (exit == false);
+  }
+
+  private void sendMessage(Group group) throws IOException {
+    out.println("\n --------- Ingrese su mensaje: ---------");
+    String message = in.readLine();
+    Message m = new Message(clientes.getPerson(clientName), message, LocalDateTime.now());
+    group.sendMessage(m);
+    out.println("\n --------- Mensaje enviado ---------\n");
   }
 
   private void writeToGroup() throws IOException {
@@ -285,14 +294,10 @@ public class ClientHandler implements Runnable {
 
 
     // Agregando usuario al grupo
-    if (listaGrupos.get(optionMenu - 1).existeUsr(listaGrupos.get(optionMenu - 1).getCreator().getName())) {
-      out.println("El usuario creador ya pertenece al grupo");
-
-    } else if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
+    if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
       out.println("El usuario ya esta en el grupo no puede ingresar");
     } else {
-      out.println("Añadiendo a " + clientName);
-      out.println("\n al grupo: " + listaGrupos.get(optionMenu - 1).getName());
+      out.println("\nAñadiendo a " + clientName + "al grupo: " + listaGrupos.get(optionMenu - 1).getName());
       listaGrupos.get(optionMenu - 1).getMiembros().add(clientes.getPerson(clientName));
     }
 
