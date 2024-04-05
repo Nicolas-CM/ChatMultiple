@@ -339,7 +339,7 @@ public class ClientHandler implements Runnable {
 
     int option = validateIntegerOption();
 
-    while (!(option <= listToValidate.size() + 1) & !(option >= 0)) {
+    while ((option > listToValidate.size() + 1) || (option < 0)) {
       out.println("Ingrese una opcion valida");
       option = validateIntegerOption();
     }
