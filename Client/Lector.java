@@ -2,6 +2,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.TargetDataLine;
 
 public class Lector implements Runnable {
     String message;
@@ -41,11 +50,47 @@ public class Lector implements Runnable {
                 case "CREATENEWGROUP":
                     createNewGroup();
                     break;
+                case "CALLSTARTED":
+                    callToGroup();
+                    break;
                 default:
                     System.out.println(message);
                     break;
             }
 
+        }
+    }
+
+    private void callToGroup() {
+        try {
+            DatagramSocket datagramSocket = new DatagramSocket();
+
+            InetAddress serverAddress = InetAddress.getByName("localhost");
+            int serverPort = 1234;
+
+            AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
+            DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
+            TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(dataLineInfo);
+            targetDataLine.open(audioFormat);
+            targetDataLine.start();
+
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while (true) {
+                bytesRead = targetDataLine.read(buffer, 0, buffer.length);
+
+                DatagramPacket packet = new DatagramPacket(buffer, bytesRead, serverAddress, serverPort);
+                datagramSocket.send(packet);
+
+                if (System.in.available() > 0 && System.in.read() == '\n') {
+                    datagramSocket.close();
+                    break;
+                }
+
+            }
+        } catch (LineUnavailableException | IOException e) {
+            e.printStackTrace();
         }
     }
 

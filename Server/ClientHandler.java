@@ -2,9 +2,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
 
 public class ClientHandler implements Runnable {
 
@@ -55,6 +63,9 @@ public class ClientHandler implements Runnable {
       }
     } catch (IOException e) {
       // e.printStackTrace();
+
+    } catch (Exception e) {
+      // e.printStackTrace();
     } finally {
       try {
         clientSocket.close();
@@ -86,7 +97,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  public void mainMenu() throws IOException {
+  public void mainMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -127,7 +138,7 @@ public class ClientHandler implements Runnable {
     return option;
   }
 
-  private void groupMenu() throws IOException {
+  private void groupMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -165,7 +176,7 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void chatMenu(Group group) throws IOException {
+  private void chatMenu(Group group) throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -185,10 +196,10 @@ public class ClientHandler implements Runnable {
           out.println(group.getAllMessages());
           break;
         case 2:
-          // joinToGroup();
+          // listenAudio();
           break;
         case 3:
-          sendMenu();
+          sendMenu(group);
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
@@ -197,7 +208,7 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void sendMenu() {
+  private void sendMenu(Group group) throws Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -214,13 +225,14 @@ public class ClientHandler implements Runnable {
           exit = true;
           break;
         case 1:
-          sendMenu();
+          sendMessage(group);
           break;
         case 2:
           // joinToGroup();
           break;
         case 3:
-          // sendMenu();
+          out.println("CALLSTARTED");
+          playCallToGruop();
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
@@ -229,7 +241,33 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void writeToGroup() throws IOException {
+  private void sendMessage(Group group) throws IOException {
+    String message = in.readLine();
+    Message m = new Message(clientes.getPerson(clientName), message, LocalDateTime.now());
+    group.sendMessage(m);
+  }
+
+  private void playCallToGruop() throws Exception {
+    DatagramSocket serverSocket = new DatagramSocket(1234);
+    // Configurar la línea de audio para reproducir el audio recibido
+    AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
+    DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+    SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
+    sourceDataLine.open(audioFormat);
+    sourceDataLine.start();
+
+    byte[] receiveData = new byte[1024];
+
+    while (true) {
+      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+      serverSocket.receive(receivePacket);
+
+      // Reproducir audio
+      sourceDataLine.write(receivePacket.getData(), 0, receivePacket.getLength());
+    }
+  }
+
+  private void writeToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
 
@@ -262,7 +300,7 @@ public class ClientHandler implements Runnable {
 
   }
 
-  private void joinToGroup() throws IOException {
+  private void joinToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
 
@@ -282,7 +320,6 @@ public class ClientHandler implements Runnable {
       groupMenu();
       return;
     }
-
 
     // Agregando usuario al grupo
     if (listaGrupos.get(optionMenu - 1).existeUsr(listaGrupos.get(optionMenu - 1).getCreator().getName())) {
@@ -334,7 +371,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void membersOfAGroup() throws IOException {
+  private void membersOfAGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
 
     int optionMenu = 0;
@@ -357,7 +394,7 @@ public class ClientHandler implements Runnable {
 
   }
 
-  private void privateMenu() throws IOException {
+  private void privateMenu() throws IOException, Exception {
     int optionMenu = 0;
     boolean exit = false;
     do {

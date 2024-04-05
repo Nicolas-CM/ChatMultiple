@@ -17,6 +17,10 @@ public class Group {
         this.chatHistory = new ChatHistory(name);
     }
 
+    public void sendMessage(Message m) {
+        chatHistory.sendMessage(m);
+    }
+
     public String getHeadHistorial() {
         return chatHistory.getHeadHistorial();
     }

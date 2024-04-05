@@ -26,6 +26,10 @@ public class ChatHistory {
         this.mensajes = mensajes;
     }
 
+    public void sendMessage(Message m) {
+        mensajes.add(m);
+    }
+
     public String getHeadHistorial() {
         if (mensajes.size() == 0) {
             return "\n No existen mensajes en Historial: " + this.getGroupOrPrivate();
