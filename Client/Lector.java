@@ -9,7 +9,6 @@ import java.net.InetAddress;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
 
 public class Lector implements Runnable {
@@ -34,7 +33,7 @@ public class Lector implements Runnable {
                         mainMenu();
 
                     default:
-                        System.out.println("Información extraña recibida del Server");
+                        System.out.println("Informacion desconocida recibida del Server");
                         break;
                 }
             }
@@ -51,7 +50,13 @@ public class Lector implements Runnable {
                     createNewGroup();
                     break;
                 case "CALLSTARTED":
-                    callToGroup();
+                    try {
+                        callToGroup();
+                        System.out.println("VENECOS");
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                     break;
                 default:
                     System.out.println(message);
@@ -61,36 +66,25 @@ public class Lector implements Runnable {
         }
     }
 
-    private void callToGroup() {
-        try {
-            DatagramSocket datagramSocket = new DatagramSocket();
+    private void callToGroup() throws Exception {
+        DatagramSocket clientSocket = new DatagramSocket();
+        AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
+        DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
+        TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(dataLineInfo);
+        targetDataLine.open(audioFormat);
+        targetDataLine.start();
 
-            InetAddress serverAddress = InetAddress.getByName("localhost");
-            int serverPort = 1234;
+        byte[] sendData = new byte[1024];
 
-            AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
-            DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
-            TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(dataLineInfo);
-            targetDataLine.open(audioFormat);
-            targetDataLine.start();
+        InetAddress serverAddress = InetAddress.getByName("localhost");
 
-            byte[] buffer = new byte[1024];
-            int bytesRead;
+        int serverPort = 6789;
 
-            while (true) {
-                bytesRead = targetDataLine.read(buffer, 0, buffer.length);
+        while (true) {
+            int bytesRead = targetDataLine.read(sendData, 0, sendData.length);
 
-                DatagramPacket packet = new DatagramPacket(buffer, bytesRead, serverAddress, serverPort);
-                datagramSocket.send(packet);
-
-                if (System.in.available() > 0 && System.in.read() == '\n') {
-                    datagramSocket.close();
-                    break;
-                }
-
-            }
-        } catch (LineUnavailableException | IOException e) {
-            e.printStackTrace();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, bytesRead, serverAddress, serverPort);
+            clientSocket.send(sendPacket);
         }
     }
 
@@ -98,7 +92,7 @@ public class Lector implements Runnable {
         try {
             while ((message = in.readLine()) != null) {
                 // repetir el ciclo hasta que no ingrese un nombre valido
-                System.out.println("Se recibió...." + message);
+                System.out.println("Se recibio...." + message);
                 if (message.startsWith("SUBMITNAME")) {
                     System.out.print("Ingrese nombre del grupo: ");
 

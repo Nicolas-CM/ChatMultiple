@@ -102,169 +102,177 @@ public class ClientHandler implements Runnable {
     boolean exit = false;
     do {
       out.println(
-          "MENU\n----------\nMenú principal\n---------- Seleccione una opción:\n 0) Salir del programa\n 1) Grupos" +
-              "\n 2) Privados" +
-              "\n-------------------");
-      optionMenu = validateIntegerOption();
+            "MENU\n----------\nMenu principal\n---------- Seleccione una opcion:\n 0) Salir del programa\n 1) Grupos" +
+                "\n 2) Privados" +
+                "\n-------------------");
+        optionMenu = validateIntegerOption();
 
-      switch (optionMenu) {
-        case 0:
-          exit = true;
-          break;
-        case 1:
-          groupMenu();
-          break;
-        case 2:
-          privateMenu();
-          break;
-        default:
-          out.println("------------------\nOpción incorrecta!");
-          break;
-      }
-    } while (exit == false);
-  }
-
-  public int validateIntegerOption() {
-    int option = 0;
-    try {
-      String input = in.readLine();
-      option = Integer.parseInt(input);
-    } catch (IOException | NumberFormatException e) {
-      // Si ocurre una excepción al leer o convertir el número,
-      // establecer la opción como -1
-      option = -1;
+        switch (optionMenu) {
+          case 0:
+            exit = true;
+            break;
+          case 1:
+            groupMenu();
+            break;
+          case 2:
+            privateMenu();
+            break;
+          default:
+            out.println("------------------\nOpcion incorrecta!");
+            break;
+        }
+      } while (exit == false);
     }
 
-    return option;
-  }
-
-  private void groupMenu() throws IOException, Exception {
-    int optionMenu = 0;
-    boolean exit = false;
-    do {
-      out.println(
-          "MENU\n----------\nMenú Grupos\n---------- Seleccione una opción:\n 0) Salir del menú\n 1) Crear un nuevo grupo"
-              +
-              "\n 2) Ingresar a un grupo" +
-              "\n 3) Escribir a un grupo" +
-              "\n 4) Ver miembros de un grupo" +
-              "\n-------------------");
-      optionMenu = validateIntegerOption();
-
-      switch (optionMenu) {
-        case 0:
-          exit = true;
-          break;
-        case 1:
-          out.println("CREATENEWGROUP");
-          createNewGroup();
-          break;
-        case 2:
-          // out.println("JOINTOGROUP");
-          joinToGroup();
-          break;
-        case 3:
-          writeToGroup();
-          break;
-        case 4:
-          membersOfAGroup();
-          break;
-        default:
-          out.println("------------------\nOpción incorrecta!");
-          break;
+    public int validateIntegerOption() {
+      int option = 0;
+      try {
+        String input = in.readLine();
+        option = Integer.parseInt(input);
+      } catch (IOException | NumberFormatException e) {
+        // Si ocurre una excepción al leer o convertir el número,
+        // establecer la opción como -1
+        option = -1;
       }
-    } while (exit == false);
-  }
 
-  private void chatMenu(Group group) throws IOException, Exception {
-    int optionMenu = 0;
-    boolean exit = false;
-    do {
-      out.println(
-          "MENU\n----------\nCHAT\n----------" + group.getHeadHistorial()
-              + "\n Seleccione una opción:\n 0) Salir del menú\n 1) Más Mensajes" +
-              "\n 2) Escuchar un audio" +
-              "\n 3) Enviar Mensajes / Llamar" +
-              "\n-------------------");
-      optionMenu = validateIntegerOption();
-
-      switch (optionMenu) {
-        case 0:
-          exit = true;
-          break;
-        case 1:
-          out.println(group.getAllMessages());
-          break;
-        case 2:
-          // listenAudio();
-          break;
-        case 3:
-          sendMenu(group);
-          break;
-        default:
-          out.println("------------------\nOpción incorrecta!");
-          break;
-      }
-    } while (exit == false);
-  }
-
-  private void sendMenu(Group group) throws Exception {
-    int optionMenu = 0;
-    boolean exit = false;
-    do {
-      out.println(
-          "MENU\n----------\nMenu Enviar\n----------"
-              + "\n Seleccione una opción de lo que dese enviar:\n 0) Salir del menú\n 1) Mensaje" +
-              "\n 2) Audio" +
-              "\n 3) Hacer Llamada" +
-              "\n-------------------");
-      optionMenu = validateIntegerOption();
-
-      switch (optionMenu) {
-        case 0:
-          exit = true;
-          break;
-        case 1:
-          sendMessage(group);
-          break;
-        case 2:
-          // joinToGroup();
-          break;
-        case 3:
-          out.println("CALLSTARTED");
-          playCallToGruop();
-          break;
-        default:
-          out.println("------------------\nOpción incorrecta!");
-          break;
-      }
-    } while (exit == false);
-  }
-
-  private void sendMessage(Group group) throws IOException {
-    String message = in.readLine();
-    Message m = new Message(clientes.getPerson(clientName), message, LocalDateTime.now());
-    group.sendMessage(m);
-  }
-
-  private void playCallToGruop() throws Exception {
-    DatagramSocket serverSocket = new DatagramSocket(1234);
-    // Configurar la línea de audio para reproducir el audio recibido
-    AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
-    DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
-    SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
-    sourceDataLine.open(audioFormat);
-    sourceDataLine.start();
-
-    byte[] receiveData = new byte[1024];
-
-    while (true) {
-      DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-      serverSocket.receive(receivePacket);
-
-      // Reproducir audio
-      sourceDataLine.write(receivePacket.getData(), 0, receivePacket.getLength());
+      return option;
     }
+
+    private void groupMenu() throws IOException, Exception {
+      int optionMenu = 0;
+      boolean exit = false;
+      do {
+        out.println(
+            "MENU\n----------\nMenu Grupos\n---------- Seleccione una opcion:\n 0) Salir del menu\n 1) Crear un nuevo grupo"
+                +
+                "\n 2) Ingresar a un grupo" +
+                "\n 3) Escribir a un grupo" +
+                "\n 4) Ver miembros de un grupo" +
+                "\n-------------------");
+        optionMenu = validateIntegerOption();
+
+        switch (optionMenu) {
+          case 0:
+            exit = true;
+            break;
+          case 1:
+            out.println("CREATENEWGROUP");
+            createNewGroup();
+            break;
+          case 2:
+            // out.println("JOINTOGROUP");
+            joinToGroup();
+            break;
+          case 3:
+            writeToGroup();
+            break;
+          case 4:
+            membersOfAGroup();
+            break;
+          default:
+            out.println("------------------\nOpción incorrecta!");
+            break;
+        }
+      } while (exit == false);
+    }
+
+    private void chatMenu(Group group) throws IOException, Exception {
+      int optionMenu = 0;
+      boolean exit = false;
+      do {
+        out.println(
+            "MENU\n----------\nCHAT\n----------" + group.getHeadHistorial()
+                + "\n Seleccione una opcion:\n 0) Salir del menu\n 1) Mas Mensajes" +
+                "\n 2) Escuchar un audio" +
+                "\n 3) Enviar Mensajes / Llamar" +
+                "\n-------------------");
+        optionMenu = validateIntegerOption();
+
+        switch (optionMenu) {
+          case 0:
+            exit = true;
+            break;
+          case 1:
+            out.println(group.getAllMessages());
+            break;
+          case 2:
+            // listenAudio();
+            break;
+          case 3:
+            sendMenu(group);
+            break;
+          default:
+            out.println("------------------\nOpción incorrecta!");
+            break;
+        }
+      } while (exit == false);
+    }
+
+    private void sendMenu(Group group) throws Exception {
+      int optionMenu = 0;
+      boolean exit = false;
+      do {
+        out.println(
+            "MENU\n----------\nMenu Enviar\n----------"
+                + "\n Seleccione una opción de lo que dese enviar:\n 0) Salir del menu\n 1) Mensaje" +
+                "\n 2) Audio" +
+                "\n 3) Hacer Llamada" +
+                "\n-------------------");
+        optionMenu = validateIntegerOption();
+
+        switch (optionMenu) {
+          case 0:
+            exit = true;
+            break;
+          case 1:
+            sendMessage(group);
+            break;
+          case 2:
+            // joinToGroup();
+            break;
+          case 3:
+            out.println("CALLSTARTED");
+            new Thread(() -> {
+              try {
+                playCallToGroup();
+              } catch (Exception e) {
+                e.printStackTrace();
+              }
+            }).start();
+            break;
+          default:
+            out.println("------------------\nOpción incorrecta!");
+            break;
+        }
+      } while (exit == false);
+    }
+
+    private void sendMessage(Group group) throws IOException {
+      String message = in.readLine();
+      Message m = new Message(clientes.getPerson(clientName), message, LocalDateTime.now());
+      group.sendMessage(m);
+    }
+
+    private static void playCallToGroup() throws Exception {
+      DatagramSocket serverSocket = new DatagramSocket(6789);
+      System.out.println("Server started. Waiting for clients...");
+
+      // Configurar la línea de audio para reproducir el audio recibido
+      AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
+      DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
+      SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
+      sourceDataLine.open(audioFormat);
+      sourceDataLine.start();
+
+      byte[] receiveData = new byte[1024];
+
+      while (true) {
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        serverSocket.receive(receivePacket);
+
+        // Reproducir audio
+        sourceDataLine.write(receivePacket.getData(), 0, receivePacket.getLength());
+      }
   }
 
   private void writeToGroup() throws IOException, Exception {
@@ -272,7 +280,7 @@ public class ClientHandler implements Runnable {
     int optionMenu = 0;
 
     out.println(
-        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
+        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
 
     // Imprimir grupos
     out.println(grupos.printMyGroups(clientName));
@@ -295,130 +303,127 @@ public class ClientHandler implements Runnable {
       // El usuario si está en el grupo y puede entrar al menú del Chat
       chatMenu(listaGrupos.get(optionMenu - 1));
     } else {
-      out.println("No estás en este grupo, bye bye");
+      out.println("No estas en este grupo, bye bye");
     }
 
   }
 
-  private void joinToGroup() throws IOException, Exception {
-    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
-    int optionMenu = 0;
+private void joinToGroup() throws IOException, Exception {
+  List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+  int optionMenu = 0;
 
-    out.println(
-        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menú");
+      out.println(
+          "MENu\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
 
-    // Imprimir grupos
-    out.println(grupos.printGroups());
+      // Imprimir grupos
+      out.println(grupos.printGroups());
 
-    if (grupos.printGroups().equals("No existen grupos creados")) {
-      groupMenu();
-    }
-
-    optionMenu = validateRange(listaGrupos);
-
-    if (optionMenu == 0) {
-      groupMenu();
-      return;
-    }
-
-    // Agregando usuario al grupo
-    if (listaGrupos.get(optionMenu - 1).existeUsr(listaGrupos.get(optionMenu - 1).getCreator().getName())) {
-      out.println("El usuario creador ya pertenece al grupo");
-
-    } else if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
-      out.println("El usuario ya esta en el grupo no puede ingresar");
-    } else {
-      out.println("Añadiendo a " + clientName);
-      out.println("\n al grupo: " + listaGrupos.get(optionMenu - 1).getName());
-      listaGrupos.get(optionMenu - 1).getMiembros().add(clientes.getPerson(clientName));
-    }
-
-  }
-
-  private int validateRange(List listToValidate) {
-
-    int option = validateIntegerOption();
-
-    while (!(option <= listToValidate.size() + 1) & !(option >= 0)) {
-      out.println("Ingrese una opcion valida");
-      option = validateIntegerOption();
-    }
-
-    return option;
-
-  }
-
-  private void createNewGroup() throws IOException {
-    while (true) {
-      out.println("SUBMITNAME");
-      groupName = in.readLine().trim();
-      System.out.println("Llego: " + groupName);
-      if (groupName == null) {
-        return;
-
+      if (grupos.printGroups().equals("No existen grupos creados")) {
+        groupMenu();
       }
-      System.out.println("Va a sincronizzar");// -------------------------
-      synchronized (groupName) {
-        if (!groupName.isBlank() && !grupos.existeGroup(groupName)) {
-          // grupos.broadcastMessage(groupName + " se ha unido al chat.");
-          System.out.println("Entró a la condición");// -------------------
-          out.println("NAMEACCEPTED");
-          System.out.println("Se envió");
-          grupos.addGroup(groupName, out, clientes.getPerson(clientName));
-          break;
+
+      optionMenu = validateRange(listaGrupos);
+
+      if (optionMenu == 0) {
+        groupMenu();
+        return;
+      }
+
+      // Agregando usuario al grupo
+      if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
+        out.println("El usuario ya esta en el grupo no puede ingresar");
+      } else {
+        out.println("Añadiendo a " + clientName);
+        out.println("\n al grupo: " + listaGrupos.get(optionMenu - 1).getName());
+        listaGrupos.get(optionMenu - 1).getMiembros().add(clientes.getPerson(clientName));
+      }
+
+    }
+
+    private int validateRange(List listToValidate) {
+
+      int option = validateIntegerOption();
+
+      while (!(option <= listToValidate.size() + 1) & !(option >= 0)) {
+        out.println("Ingrese una opcion valida");
+        option = validateIntegerOption();
+      }
+
+      return option;
+
+    }
+
+    private void createNewGroup() throws IOException {
+      while (true) {
+        out.println("SUBMITNAME");
+        groupName = in.readLine().trim();
+        System.out.println("Llego: " + groupName);
+        if (groupName == null) {
+          return;
+
+        }
+        System.out.println("Va a sincronizzar");// -------------------------
+        synchronized (groupName) {
+          if (!groupName.isBlank() && !grupos.existeGroup(groupName)) {
+            // grupos.broadcastMessage(groupName + " se ha unido al chat.");
+            System.out.println("Entró a la condición");// -------------------
+            out.println("NAMEACCEPTED");
+            System.out.println("Se envió");
+            grupos.addGroup(groupName, out, clientes.getPerson(clientName));
+            break;
+          }
         }
       }
     }
-  }
 
-  private void membersOfAGroup() throws IOException, Exception {
-    List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
+    private void membersOfAGroup() throws IOException, Exception {
+      List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
 
-    int optionMenu = 0;
+      int optionMenu = 0;
 
-    out.println(
-        "MENU\n----------\nVer miembros de un grupo\n---------- Seleccione un grupo para ver sus miembros:\n 0) Salir del menú");
+      out.println(
+          "MENU\n----------\nVer miembros de un grupo\n---------- Seleccione un grupo para ver sus miembros:\n 0) Salir del menu");
 
-    // Imprimir grupos
-    out.println(grupos.printGroups());
+      // Imprimir grupos
+      out.println(grupos.printGroups());
 
-    optionMenu = validateRange(listaGrupos);
+      optionMenu = validateRange(listaGrupos);
 
-    if (optionMenu == 0) {
-      groupMenu();
-      return;
+      if (optionMenu == 0) {
+        groupMenu();
+        return;
+      }
+
+      // Imprimir personas de los grupos
+      out.println(listaGrupos.get(optionMenu - 1).printMembers());
+
     }
 
-    // Imprimir personas de los grupos
-    out.println(listaGrupos.get(optionMenu - 1).printMembers());
+    private void privateMenu() throws IOException, Exception {
+      int optionMenu = 0;
+      boolean exit = false;
+      do {
+        out.println(
+            "MENU\n----------\nMenu Privados\n---------- Seleccione una opcion:\n 0) Salir del menu\n 1) Crear un nuevo chat"
+                +
+                "\n 2) Escribir a un chat" +
+                "\n-------------------");
+        optionMenu = validateIntegerOption();
 
+        switch (optionMenu) {
+          case 0:
+            exit = true;
+            break;
+          case 1:
+            createNewGroup();
+            break;
+          case 2:
+            joinToGroup();
+            break;
+          default:
+            out.println("------------------\nOpción incorrecta!");
+            break;
+        }
+      } while (exit == false);
+    }
   }
-
-  private void privateMenu() throws IOException, Exception {
-    int optionMenu = 0;
-    boolean exit = false;
-    do {
-      out.println(
-          "MENU\n----------\nMenú Privados\n---------- Seleccione una opción:\n 0) Salir del menú\n 1) Crear un nuevo chat"
-              +
-              "\n 2) Escribir a un chat" +
-              "\n-------------------");
-      optionMenu = validateIntegerOption();
-
-      switch (optionMenu) {
-        case 0:
-          exit = true;
-          break;
-        case 1:
-          createNewGroup();
-          break;
-        case 2:
-          joinToGroup();
-          break;
-        default:
-          out.println("------------------\nOpción incorrecta!");
-          break;
-      }
-    } while (exit == false);
-  }
-}
