@@ -23,11 +23,13 @@ public class ClientHandler implements Runnable {
   private String groupName;
   Chatters clientes;
   Comunity grupos;
+  Personals privados;
 
-  public ClientHandler(Socket socket, Chatters clientes, Comunity grupos) {
+  public ClientHandler(Socket socket, Chatters clientes, Comunity grupos, Personals privados) {
     this.clientes = clientes;
     this.clientSocket = socket;
     this.grupos = grupos;
+    this.privados = privados;
     try {
       in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       out = new PrintWriter(socket.getOutputStream(), true); // Se inicializa el flujo de salida aquí
@@ -88,7 +90,7 @@ public class ClientHandler implements Runnable {
       }
       synchronized (clientName) {
         if (!clientName.isBlank() && !clientes.existeUsr(clientName)) {
-          clientes.broadcastMessage(clientName + " se ha unido al chat.");
+          clientes.broadcastMessage(clientName + " se ha unido a la aplicacion.");
           out.println("NAMEACCEPTED " + clientName);
           clientes.addUsr(clientName, out);
           break;
@@ -176,12 +178,21 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void chatMenu(Group group) throws IOException, Exception {
+  private void chatMenu(Group group, Private privado) throws IOException, Exception {
+    System.out.println("Dentro de ChatMenu");
     int optionMenu = 0;
     boolean exit = false;
+    String lastTen = "";
+    String allHistorial = "";
     do {
+      if (privado == null) {
+        lastTen = group.getHistorial(true);
+      } else {
+        lastTen = privado.getHistorial(true);
+      }
+
       out.println(
-          "MENU\n----------\nCHAT\n----------" + group.getHeadHistorial()
+          "MENU\n----------\nCHAT\n----------" + lastTen
               + "\n Seleccione una opcion:\n 0) Salir del menu\n 1) Mas Mensajes" +
               "\n 2) Escuchar un audio" +
               "\n 3) Enviar Mensajes / Llamar" +
@@ -193,13 +204,19 @@ public class ClientHandler implements Runnable {
           exit = true;
           break;
         case 1:
-          out.println(group.getAllMessages());
+          // Dependiendo si es un grupo o privado se realizan tareas diferentes
+          if (privado == null) {
+            allHistorial = group.getHistorial(false);
+          } else {
+            allHistorial = privado.getHistorial(false);
+          }
+          out.println(allHistorial);
           break;
         case 2:
           // listenAudio();
           break;
         case 3:
-          sendMenu(group);
+          sendMenu(group, privado);
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
@@ -208,7 +225,7 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void sendMenu(Group group) throws IOException {
+  private void sendMenu(Group group, Private privado) throws IOException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -225,7 +242,7 @@ public class ClientHandler implements Runnable {
           exit = true;
           break;
         case 1:
-          sendMessage(group);
+          sendMessage(group, privado);
           break;
         case 2:
           // joinToGroup();
@@ -247,11 +264,16 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  private void sendMessage(Group group) throws IOException {
+  private void sendMessage(Group group, Private privado) throws IOException {
     out.println("\n --------- Ingrese su mensaje: ---------");
     String message = in.readLine();
     Message m = new Message(clientes.getPerson(clientName), message, LocalDateTime.now());
-    group.sendMessage(m);
+    // Si es privado o al grupo lo manda
+    if (privado == null) {
+      group.sendMessage(m);
+    } else {
+      privado.sendMessage(m);
+    }
     out.println("\n --------- Mensaje enviado ---------\n");
   }
 
@@ -303,7 +325,7 @@ public class ClientHandler implements Runnable {
     // selecccionado
     if (listaGrupos.get(optionMenu - 1).existeUsr(clientName)) {
       // El usuario si está en el grupo y puede entrar al menú del Chat
-      chatMenu(listaGrupos.get(optionMenu - 1));
+      chatMenu(listaGrupos.get(optionMenu - 1), null);
     } else {
       out.println("No estas en este grupo, bye bye");
     }
@@ -315,7 +337,7 @@ public class ClientHandler implements Runnable {
     int optionMenu = 0;
 
     out.println(
-        "MENu\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
+        "MENU\n----------\nGrupos Registrados\n---------- Seleccione un grupo para ingresar:\n 0) Salir del menu");
 
     // Imprimir grupos
     out.println(grupos.printGroups());
@@ -416,15 +438,98 @@ public class ClientHandler implements Runnable {
           exit = true;
           break;
         case 1:
-          createNewGroup();
+          createChatPrivate();
           break;
         case 2:
-          joinToGroup();
+          writeToPrivate();
           break;
         default:
           out.println("------------------\nOpción incorrecta!");
           break;
       }
     } while (exit == false);
+  }
+
+  private void writeToPrivate() throws IOException, Exception {
+
+    List<Private> listaPrivados = new ArrayList<>(privados.getMyPrivates(clientName));
+    int optionMenu = 0;
+
+    if (listaPrivados.isEmpty()) {
+      out.println("\nNo tienes chat privados, intenta la opcion 'Crear un nuevo chat'");
+      return;
+    }
+
+    out.println(
+        "MENU\n----------\nChat Privados\n---------- Seleccione un chat privado para ingresar:\n 0) Salir del menu");
+
+    // Imprimir privados
+    out.println(printListMyPrivates(listaPrivados, clientName));
+
+    optionMenu = validateRange(listaPrivados);
+
+    if (optionMenu == 0) {
+      privateMenu();
+      return;
+    }
+
+    // Iniciando chat con el privado y enviando los mensajes al historial del grupo
+    // selecccionado
+    System.out.println("Estoy antes del are you");
+    if (listaPrivados.get(optionMenu - 1).areYouHereInThisPrivate(clientName)) {
+      // El usuario si está en el privadp y puede entrar al menú del Chat
+      System.out.println("Dentro de areyou");
+      chatMenu(null, listaPrivados.get(optionMenu - 1));
+    } else {
+      out.println("No estas en este privado, bye bye");
+    }
+  }
+
+  private String printListMyPrivates(List<Private> list, String client) {
+    String m = "";
+    for (int i = 0; i < list.size(); i++) {
+      System.out.println("Soy yooooooooooo:" + list.get(i).getPerson1().getName() + ":vs:" + client + ":");
+      System.out.println(list.get(i).getPerson1().getName().equals(client));
+      if (list.get(i).getPerson1().getName().equals(client)) {
+        m += ((i + 1) + ") " + list.get(i).getPerson2().getName() + "\n");
+      } else {
+        m += ((i + 1) + ") " + list.get(i).getPerson1().getName() + "\n");
+      }
+    }
+    return m;
+  }
+
+  private void createChatPrivate() throws IOException, Exception {
+    List<Person> listaClientes = new ArrayList<>(clientes.getClientes());
+
+    int optionMenu = 0;
+
+    out.println(
+        "MENU\n----------\nPersonas de la aplicación\n---------- Seleccione una persona para iniciar un Chat Privado:\n 0) Salir del menu");
+
+    // Imprimir los clientes para crear el nuevo Privado
+    if (clientes.printClientesWithoutMe(clientName).equals("No hay mas personas en el servidor")) {
+      out.println("\n No existen mas usuarios por ahora!!!\n");
+      privateMenu();
+      return;
+    }
+    out.println(clientes.printClientesWithoutMe(clientName));
+
+    optionMenu = validateRange(listaClientes);
+
+    if (optionMenu == 0) {
+      privateMenu();
+      return;
+    }
+
+    // Creando el nuevo privado
+    String other = listaClientes.get(optionMenu - 1).getName();
+    if (privados.existePrivate(clientName, other)) {
+      out.println("Ya tienes un Chat Privado con esta persona, intenta desde la opcion 'Escribir a un chat'");
+    } else {
+      out.println("\n Creando un nuevo Chat privado entre " + other + " y " + clientName);
+      privados.addPrivate(clientes.getPerson(clientName), clientes.getPerson(other));
+    }
+
   }
 }

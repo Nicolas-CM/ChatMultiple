@@ -46,13 +46,12 @@ public class Comunity {
 
         String gruposMensaje = "";
 
-        int counter = 0;
         if (listaGrupos.size() == 0) {
             return "No existen grupos creados";
         } else {
             for (int i = 0; i < listaGrupos.size(); i++) {
                 if (listaGrupos.get(i).existeUsr(member)) {
-                    gruposMensaje += ((counter + 1) + ") " + listaGrupos.get(i).getName() + "\n");
+                    gruposMensaje += ((i + 1) + ") " + listaGrupos.get(i).getName() + "\n");
                 }
 
             }
@@ -66,12 +65,11 @@ public class Comunity {
 
         String gruposMensaje = "";
 
-        int counter = 0;
         if (listaGrupos.size() == 0) {
             return "No existen grupos creados";
         } else {
             for (int i = 0; i < listaGrupos.size(); i++) {
-                gruposMensaje += ((counter + 1) + ") " + listaGrupos.get(i).getName() + "\n");
+                gruposMensaje += ((i + 1) + ") " + listaGrupos.get(i).getName() + "\n");
 
             }
 

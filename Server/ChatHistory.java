@@ -28,30 +28,30 @@ public class ChatHistory {
         mensajes.add(m);
     }
 
-    public String getHeadHistorial() {
+    public String getHistorial(boolean lastTen) {
         if (mensajes.size() == 0) {
             return "\n No existen mensajes en Historial: " + this.getGroupOrPrivate();
         }
-        int startIndex = Math.max(0, mensajes.size() - 10); // Indice de inicio
-        int endIndex = mensajes.size(); // Indice de fin (último mensaje)
-        // Se crea una sublista con los últimos 10 mensajes
-        List<Message> head = mensajes.subList(startIndex, endIndex);
-        String historialHead = " \n\nHISTORIAL: " + this.getGroupOrPrivate() + "\n MENSAJES: ";
-        for (Message m : head) {
-            historialHead += "\n " + m.getSender().getName() + ": " + m.getContent() + " ["
-                    + m.getTimestamp().toString() + "]";
+
+        String historial = "\n\nHISTORIAL: " + this.getGroupOrPrivate() + "\n MENSAJES: ";
+
+        if (lastTen) {
+            int startIndex = Math.max(0, mensajes.size() - 10); // Indice de inicio
+            int endIndex = mensajes.size(); // Indice de fin (último mensaje)
+            // Se crea una sublista con los últimos 10 mensajes
+            List<Message> head = mensajes.subList(startIndex, endIndex);
+            for (Message m : head) {
+                historial += "\n " + m.getSender().getName() + ": " + m.getContent() + " ["
+                        + m.getTimestamp().toString() + "]";
+            }
+        } else {
+            for (Message m : mensajes) {
+                historial += "\n " + m.getSender().getName() + ": " + m.getContent() + " ["
+                        + m.getTimestamp().toString() + "]";
+            }
         }
-        return historialHead + "\n";
+
+        return historial + "\n";
     }
 
-    public String getAllMessages() {
-        if (mensajes.size() == 0) {
-            return "\n No existen mensajes Historial: " + this.getGroupOrPrivate();
-        }
-        String todos = " \n\nHISTORIAL: " + this.getGroupOrPrivate() + "\n MENSAJES: ";
-        for (Message m : mensajes) {
-            todos += "\n " + m.getSender().getName() + ": " + m.getContent() + " [" + m.getTimestamp().toString() + "]";
-        }
-        return todos + "\n";
-    }
 }

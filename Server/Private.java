@@ -11,6 +11,20 @@ public class Private {
         this.chatHistory = new ChatHistory(person1.getName() + "-" + person2.getName());
     }
 
+    public boolean existePrivate(String me, String other) {
+        if (me.equals(person1.getName()) && other.equals(person2.getName())) {
+            return true;
+        } else if (other.equals(person1.getName()) && me.equals(person2.getName())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean areYouHereInThisPrivate(String name) {
+        return (name.equals(person1.getName()) || name.equals(person2.getName()));
+    }
+
     public Person getPerson1() {
         return person1;
     }
@@ -31,12 +45,8 @@ public class Private {
         chatHistory.sendMessage(m);
     }
 
-    public String getHeadHistorial() {
-        return chatHistory.getHeadHistorial();
-    }
-
-    public String getAllMessages() {
-        return chatHistory.getAllMessages();
+    public String getHistorial(boolean lastTen) {
+        return chatHistory.getHistorial(lastTen);
     }
 
 }

@@ -1,5 +1,7 @@
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -8,7 +10,35 @@ public class Chatters{
 
     private Set<Person> clientes = new HashSet<>();
      
+    public Set<Person> getClientes() {
+        return clientes;
+    }
+
+    public void setClientes(Set<Person> clientes) {
+        this.clientes = clientes;
+    }
+
     public Chatters() {
+    }
+
+    public String printClientesWithoutMe(String me) {
+        if (clientes.size() == 1) {
+            return "No hay mas personas en el servidor";
+        }
+
+        List<Person> listaClientes = new ArrayList<>(clientes);
+
+        String client = "";
+
+        for (int i = 0; i < listaClientes.size(); i++) {
+            if (!listaClientes.get(i).getName().equals(me)) {
+                client += ((i + 1) + ") " + listaClientes.get(i).getName() + "\n");
+            }
+
+        }
+
+        return client;
+
     }
 
     public Person getPerson(String name) {

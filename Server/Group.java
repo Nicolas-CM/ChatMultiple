@@ -22,12 +22,8 @@ public class Group {
         chatHistory.sendMessage(m);
     }
 
-    public String getHeadHistorial() {
-        return chatHistory.getHeadHistorial();
-    }
-
-    public String getAllMessages() {
-        return chatHistory.getAllMessages();
+    public String getHistorial(boolean lastTen) {
+        return chatHistory.getHistorial(lastTen);
     }
 
     public Person getPerson(String name) {
@@ -63,8 +59,7 @@ public class Group {
         } else {
 
             for (int i = 0; i < listaPersonas.size(); i++) {
-                int counterPerson = 0;
-                mensajeMiembros += ("\n Miembro #" + (counterPerson + 1) + ": " + listaPersonas.get(i).getName());
+                mensajeMiembros += ("\n Miembro #" + (i + 1) + ": " + listaPersonas.get(i).getName());
             }
 
             return mensajeMiembros;
