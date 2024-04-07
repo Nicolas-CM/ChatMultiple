@@ -92,12 +92,12 @@ public class Lector implements Runnable {
         try {
             while ((message = in.readLine()) != null) {
                 // repetir el ciclo hasta que no ingrese un nombre valido
-                System.out.println("Se recibio...." + message);
+                System.out.println("\nSe recibio...." + message);
                 if (message.startsWith("SUBMITNAME")) {
-                    System.out.print("Ingrese nombre del grupo: ");
+                    System.out.print("\nIngrese nombre del grupo: ");
 
                 } else if (message.startsWith("NAMEACCEPTED")) {
-                    System.out.println("Nombre aceptado del grupo!!");
+                    System.out.println("\n¡Nombre aceptado del grupo!\n");
                     break;
                 }
             }

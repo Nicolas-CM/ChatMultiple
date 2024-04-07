@@ -11,7 +11,7 @@ public class Client {
     public static void main(String[] args) {
         try {
             Socket socket = new Socket(SERVER_IP, PORT);
-            System.out.println("Conectado al servidor.");
+            System.out.println("\nConectado al servidor.\n");
             String message;
             BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
@@ -20,11 +20,11 @@ public class Client {
             while ((message = in.readLine()) != null) {
                 //repetir el ciclo hasta que no ingrese un nombre valido
                 if (message.startsWith("SUBMITNAME")) {
-                    System.out.print("Ingrese nombre de usuario: ");
+                    System.out.print("\nIngrese nombre de usuario: \n");
                     String name = userInput.readLine();
                     out.println(name);
                 } else if (message.startsWith("NAMEACCEPTED")) {
-                    System.out.println("Nombre aceptado!!");
+                    System.out.println("\n¡Nombre aceptado!\n");
                     break;
                 }
             }
