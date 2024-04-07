@@ -35,7 +35,6 @@ public class Client {
       }
 
       // creamos el objeto lector e iniciamos el hilo
-      Lector l = null;
       Lector lector = new Lector(in, out, SERVER_IP);
       new Thread(lector).start();
       lector.getClass();
