@@ -1,9 +1,19 @@
+//S
+
 public class Private {
 
     private Person person1;
     private Person person2;
 
     private ChatHistory chatHistory;
+
+    public ChatHistory getChatHistory() {
+        return chatHistory;
+    }
+
+    public void setChatHistory(ChatHistory chatHistory) {
+        this.chatHistory = chatHistory;
+    }
 
     public Private(Person person1, Person person2) {
         this.person1 = person1;
@@ -43,6 +53,10 @@ public class Private {
 
     public void sendMessage(Message m) {
         chatHistory.sendMessage(m);
+    }
+
+    public void sendAudio(Audio audio) {
+        chatHistory.sendAudio(audio);
     }
 
     public String getHistorial(boolean lastTen) {

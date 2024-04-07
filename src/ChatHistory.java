@@ -1,8 +1,11 @@
+//S
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatHistory {
     private List<Message> mensajes = new ArrayList<>();
+    private List<Audio> audios = new ArrayList<>();
     private String groupOrMembers;
 
     public ChatHistory(String groupOrMembers) {
@@ -16,6 +19,7 @@ public class ChatHistory {
     public void setGroupOrMembers(String groupOrMembers) {
         this.groupOrMembers = groupOrMembers;
     }
+
     public List<Message> getMensajes() {
         return mensajes;
     }
@@ -24,8 +28,20 @@ public class ChatHistory {
         this.mensajes = mensajes;
     }
 
+    public List<Audio> getAudios() {
+        return audios;
+    }
+
+    public void setAudios(List<Audio> audios) {
+        this.audios = audios;
+    }
+
     public void sendMessage(Message m) {
         mensajes.add(m);
+    }
+
+    public void sendAudio(Audio audio) {
+        audios.add(audio);
     }
 
     public String getHistorial(boolean lastTen) {
@@ -52,6 +68,14 @@ public class ChatHistory {
         }
 
         return historial + "\n";
+    }
+
+    public String printAudios() {
+        String m = "";
+        for (int i = 0; i < audios.size(); i++) {
+            m += ((i + 1) + ") Audio " + (i + 1) + "\n");
+        }
+        return m;
     }
 
 }

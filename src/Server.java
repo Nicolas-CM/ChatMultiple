@@ -1,4 +1,5 @@
-import java.io.IOException;
+//S
+
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,17 +18,22 @@ public class Server {
 
     try {
       ServerSocket serverSocket = new ServerSocket(PORT);
-      System.out.println("Servidor iniciado. Esperando clientes...");
+      System.out.println("\nServidor iniciado. Esperando clientes...");
 
       while (true) {
         Socket clientSocket = serverSocket.accept();
-        System.out.println("Nuevo cliente conectado: " + clientSocket);
+        System.out.println("\nNuevo cliente conectado: " + clientSocket + "\n");
         // crea el objeto Runable
-        ClientHandler clientHandler = new ClientHandler(clientSocket, clientes, grupos, privados);
+        ClientHandler clientHandler = new ClientHandler(
+          clientSocket,
+          clientes,
+          grupos,
+          privados
+        );
         // inicia el hilo con el objeto Runnable
         new Thread(clientHandler).start();
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       e.printStackTrace();
     }
   }

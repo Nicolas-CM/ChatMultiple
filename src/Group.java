@@ -1,3 +1,5 @@
+//S
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -11,11 +13,23 @@ public class Group {
     private Person creator;
     private ChatHistory chatHistory;
 
+    public ChatHistory getChatHistory() {
+        return chatHistory;
+    }
+
+    public void setChatHistory(ChatHistory chatHistory) {
+        this.chatHistory = chatHistory;
+    }
+
     public Group(String name, Person creator) {
         this.name = name;
         this.creator = creator;
         this.miembros.add(creator);
         this.chatHistory = new ChatHistory(name);
+    }
+
+    public void sendAudio(Audio audio) {
+        chatHistory.sendAudio(audio);
     }
 
     public void sendMessage(Message m) {
@@ -75,7 +89,6 @@ public class Group {
     public void setName(String name) {
         this.name = name;
     }
-
 
     public Set<Person> getMiembros() {
         return miembros;
