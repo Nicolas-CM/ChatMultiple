@@ -72,7 +72,7 @@ public class ClientHandler implements Runnable {
       try {
         clientSocket.close();
         System.out.println(clientName + " ha abandonado el chat.");
-        clientes.broadcastMessage(clientName + " ha abandonado el chat.");
+        clientes.broadcastMessage(clientName + " ha abandonado la aplicación.");
         clientes.removeUsr(clientName);
       } catch (IOException e) {
         // e.printStackTrace();
@@ -135,6 +135,7 @@ public class ClientHandler implements Runnable {
       // Si ocurre una excepción al leer o convertir el número,
       // establecer la opción como -1
       option = -1;
+      e.printStackTrace();
     }
 
     return option;
@@ -517,7 +518,8 @@ public class ClientHandler implements Runnable {
 
     optionMenu = validateRange(listaClientes);
 
-    if (optionMenu == 0) {
+    if (optionMenu == 0 || listaClientes.get(optionMenu - 1).equals(clientes.getPerson(clientName))) {
+      out.println("\n Pa que quieres un grupo contigo mismo???\n");
       privateMenu();
       return;
     }
