@@ -160,7 +160,7 @@ public class Lector implements Runnable {
         if (message.startsWith("SUBMITNAME")) {
           System.out.print("\nIngrese nombre del grupo: \n");
         } else if (message.startsWith("NAMEACCEPTED")) {
-          System.out.println("\n¡Nombre del grupo aceptado!\n");
+          System.out.println("\nNombre del grupo aceptado!\n");
           break;
         }
       }

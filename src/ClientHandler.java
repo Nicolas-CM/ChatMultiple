@@ -144,7 +144,7 @@ public class ClientHandler implements Runnable {
       // Si ocurre una excepcion al leer o convertir el numero,
       // establecer la opcion como -1
       option = -1;
-      e.printStackTrace();
+      System.out.println("Se recibio un dato invalido");
     }
 
     return option;
@@ -166,6 +166,7 @@ public class ClientHandler implements Runnable {
       switch (optionMenu) {
         case 0:
           exit = true;
+          mainMenu();
           break;
         case 1:
           out.println("CREATENEWGROUP");
@@ -182,7 +183,7 @@ public class ClientHandler implements Runnable {
           membersOfAGroup();
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
@@ -232,7 +233,7 @@ public class ClientHandler implements Runnable {
           sendMenu(group, privado);
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!");
+          out.println("\n------------------\nOpcion incorrecta!");
           break;
       }
     } while (exit == false);
@@ -408,7 +409,7 @@ public class ClientHandler implements Runnable {
             .start();
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
@@ -468,6 +469,10 @@ public class ClientHandler implements Runnable {
   private void writeToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
+    if(listaGrupos.isEmpty()){
+      out.println("Aun no hay grupos creados");
+      return;
+    }
 
     out.println(
       "MENU\n----------\nGrupos Registrados\n---------- \n\nSeleccione un grupo para ingresar:\n 0) Salir del menu\n"
@@ -475,11 +480,6 @@ public class ClientHandler implements Runnable {
 
     // Imprimir grupos
     out.println(grupos.printMyGroups(clientName));
-
-    if (grupos.printMyGroups(clientName).equals("No existen grupos creados")) {
-      groupMenu();
-      return;
-    }
 
     optionMenu = validateRange(listaGrupos);
 
@@ -501,7 +501,9 @@ public class ClientHandler implements Runnable {
   private void joinToGroup() throws IOException, Exception {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
-
+    if (grupos.printGroups().equals("No existen grupos creados")) {;
+      return;
+    }
     out.println(
       "MENU\n----------\nGrupos Registrados\n---------- \n\nSeleccione un grupo para ingresar:\n 0) Salir del menu\n"
     );
@@ -509,9 +511,7 @@ public class ClientHandler implements Runnable {
     // Imprimir grupos
     out.println(grupos.printGroups() + "\n");
 
-    if (grupos.printGroups().equals("No existen grupos creados")) {
-      groupMenu();
-    }
+    
 
     optionMenu = validateRange(listaGrupos);
 
@@ -525,7 +525,7 @@ public class ClientHandler implements Runnable {
       out.println("\nEl usuario ya esta en el grupo no puede ingresar\n");
     } else {
       out.println(
-        "\nAñadiendo a " +
+        "\nIngresando a " +
         clientName +
         " al grupo: " +
         listaGrupos.get(optionMenu - 1).getName() +
@@ -553,17 +553,17 @@ public class ClientHandler implements Runnable {
     while (true) {
       out.println("SUBMITNAME");
       groupName = in.readLine().trim();
-      System.out.println("\nLlego: " + groupName + "\n");
+      System.out.println("Llego: " + groupName + "\n");
       if (groupName == null) {
         return;
       }
-      System.out.println("\nVa a sincronizzar\n"); // -------------------------
+      System.out.println("Va a sincronizzar\n"); // -------------------------
       synchronized (groupName) {
         if (!groupName.isBlank() && !grupos.existeGroup(groupName)) {
           // grupos.broadcastMessage(groupName + " se ha unido al chat.");
-          System.out.println("\nEntro a la condicion\n"); // -------------------
+          System.out.println("Entro a la condicion\n"); // -------------------
           out.println("NAMEACCEPTED");
-          System.out.println("\nSe envio\n");
+          System.out.println("Se envio\n");
           grupos.addGroup(groupName, out, clientes.getPerson(clientName));
           break;
         }
@@ -616,7 +616,7 @@ public class ClientHandler implements Runnable {
           writeToPrivate();
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
@@ -696,7 +696,7 @@ public class ClientHandler implements Runnable {
         .printClientesWithoutMe(clientName)
         .equals("No hay mas personas en el servidor")
     ) {
-      out.println("\n ¡No existen mas usuarios por ahora! \n");
+      out.println("\n No existen mas usuarios por ahora! \n");
       privateMenu();
       return;
     }
@@ -704,11 +704,13 @@ public class ClientHandler implements Runnable {
 
     optionMenu = validateRange(listaClientes);
 
+    if(optionMenu == 0){
+      return;
+    }
     if (
-      optionMenu == 0 ||
       listaClientes.get(optionMenu - 1).equals(clientes.getPerson(clientName))
     ) {
-      out.println("\n ¿Para que quieres un grupo contigo mismo? \n");
+      out.println("\nPara que quieres un chat o u un grupo contigo mismo? \n");
       privateMenu();
       return;
     }
@@ -721,7 +723,7 @@ public class ClientHandler implements Runnable {
       );
     } else {
       out.println(
-        "\n Creando un nuevo Chat privado entre " +
+        "\nSe creo un nuevo Chat privado entre " +
         other +
         " y " +
         clientName +

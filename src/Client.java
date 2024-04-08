@@ -12,7 +12,7 @@ public class Client {
   public static void main(String[] args) {
     try {
       Socket socket = new Socket(SERVER_IP, PORT);
-      System.out.println("\nConectado al servidor.\n");
+      System.out.println("\nConectado al servidor.");
       String message;
       BufferedReader userInput = new BufferedReader(
         new InputStreamReader(System.in)
@@ -29,7 +29,7 @@ public class Client {
           String name = userInput.readLine();
           out.println(name);
         } else if (message.startsWith("NAMEACCEPTED")) {
-          System.out.println("\n¡Nombre aceptado!\n");
+          System.out.println("\nNombre aceptado!\n");
           break;
         }
       }
