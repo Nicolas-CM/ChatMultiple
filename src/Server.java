@@ -3,6 +3,7 @@
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,7 +35,9 @@ public class Server {
         new Thread(clientHandler).start();
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      if (e instanceof SocketException) {
+        System.out.println("Cliente desconectado");
+      }
     }
   }
 }

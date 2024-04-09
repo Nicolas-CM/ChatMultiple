@@ -8,10 +8,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
 public class Lector implements Runnable {
@@ -19,36 +20,136 @@ public class Lector implements Runnable {
   String message;
   BufferedReader in;
   PrintWriter out;
-  BufferedReader userInput = new BufferedReader(
-    new InputStreamReader(System.in)
-  );
+  BufferedReader userInput;
   String adress;
   AudioRecorderPlayer reproductor;
 
-  public Lector(BufferedReader in, PrintWriter out, String adress) {
+  TargetDataLine microphone;
+  SourceDataLine speakers;
+  volatile boolean stopCall;
+  AudioFormat format;
+  DatagramSocket callSocket;
+  int serverSocketUDP;
+  InetAddress ipInetAddress;
+
+  public Lector(
+    BufferedReader in,
+    PrintWriter out,
+    String adress,
+    int serverSocketUDP,
+    DatagramSocket callSocket
+  ) throws LineUnavailableException, UnknownHostException {
     this.in = in;
     this.out = out;
     this.adress = adress;
     this.reproductor = new AudioRecorderPlayer();
+    this.microphone = AudioSystem.getTargetDataLine(format);
+    this.speakers = AudioSystem.getSourceDataLine(format);
+    this.stopCall = false;
+    this.callSocket = callSocket;
+    this.format = new AudioFormat(24000.0f, 16, 1, true, true);
+    this.serverSocketUDP = serverSocketUDP;
+    this.userInput = new BufferedReader(new InputStreamReader(System.in));
+    this.ipInetAddress = InetAddress.getByName(adress);
   }
 
   @Override
   public void run() {
     // leer la linea que envia el servidor e imprimir en pantalla
+    boolean end = false;
     try {
-      while ((message = in.readLine()) != null) {
+      while ((message = in.readLine()) != null || !end) {
         switch (message) {
           case "MENU":
             mainMenu();
+            System.out.println(
+              "Escriba 'exit' para cerrar la terminal. Gracias por usar nuestra aplicacion"
+            );
+            return;
           default:
             System.out.println("Informacion desconocida recibida del Server");
             break;
         }
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      System.out.println();
+      System.out.println(
+        "Servidor desconectado \n Escriba 'exit' para cerrar la terminal. Gracias por usar nuestra aplicacion"
+      );
     } catch (LineUnavailableException e) {
       // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public void call() {
+    stopCall = false;
+    // Crear e iniciar un hilo para enviar voz
+    Thread sendVoiceThread = new Thread(() -> {
+      sendVoice();
+    });
+    sendVoiceThread.start();
+
+    // Crear e iniciar un hilo para recibir voz
+    Thread receiveVoiceThread = new Thread(() -> {
+      receiveVoice();
+    });
+    receiveVoiceThread.start();
+  }
+
+  public void stopCall() {
+    stopCall = true;
+    // Detener el envío de voz
+    microphone.stop();
+    microphone.close();
+
+    // Detener la recepción de voz
+    speakers.stop();
+    speakers.close();
+
+    System.out.println("Llamada detenida.");
+  }
+
+  public void sendVoice() {
+    try {
+      microphone.open(format);
+      microphone.start();
+
+      byte[] buffer = new byte[800];
+      DatagramPacket packet;
+
+      System.out.println("Llamando");
+
+      while (!stopCall) {
+        int bytesRead = microphone.read(buffer, 0, buffer.length);
+        packet =
+          new DatagramPacket(buffer, bytesRead, ipInetAddress, serverSocketUDP);
+        try {
+          callSocket.send(packet);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    } catch (LineUnavailableException e) {
+      e.printStackTrace();
+    }
+  }
+
+  public void receiveVoice() {
+    try {
+      speakers.open(format);
+      speakers.start();
+
+      byte[] buffer = new byte[800];
+
+      DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+      while (!stopCall) {
+        callSocket.receive(packet);
+        speakers.write(packet.getData(), 0, packet.getLength());
+      }
+    } catch (LineUnavailableException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }
@@ -56,23 +157,22 @@ public class Lector implements Runnable {
   private void mainMenu() throws IOException, LineUnavailableException {
     while ((message = in.readLine()) != null) {
       switch (message) {
+        case "FINISH":
+          return;
         case "CREATENEWGROUP":
           createNewGroup();
           break;
-        case "CALLSTARTED":
-          try {
-            callToGroup();
-            System.out.println("VENECOS");
-          } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          }
-          break;
         case "RECORDAUDIO":
-          recordAudio(5, "localhost", 7000);
+          recordAudio(5, adress, 12345);
           break;
         case "PLAYAUDIO":
           playAudio();
+          break;
+        case "ENTERTOCALL":
+          call();
+          break;
+        case "STOPCALL":
+          stopCall();
           break;
         default:
           System.out.println(message);
@@ -84,7 +184,7 @@ public class Lector implements Runnable {
   private void playAudio() {
     try {
       System.out.println("\nEstoy en Play Audio\n");
-      Socket socket = new Socket("localhost", 12348); // Conéctate al servidor en el puerto 12345
+      Socket socket = new Socket(adress, 12348); // Conéctate al servidor en el puerto 12345
       ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
       // Leer el objeto Audio enviado por el servidor
@@ -107,7 +207,7 @@ public class Lector implements Runnable {
     System.out.println("\nYa grabo el audio\n");
 
     try {
-      Socket socket = new Socket("localhost", 12345); // Cambia "localhost" y 12345 por la dirección y puerto del
+      Socket socket = new Socket(serverAddress, serverPort); // Cambia "localhost" y 12345 por la dirección y puerto del
       // servidor
       ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
       System.out.println("\nVa a enviar el audio\n");
@@ -120,38 +220,6 @@ public class Lector implements Runnable {
     }
   }
 
-  private void callToGroup() throws Exception {
-    DatagramSocket clientSocket = new DatagramSocket();
-    AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
-    DataLine.Info dataLineInfo = new DataLine.Info(
-      TargetDataLine.class,
-      audioFormat
-    );
-    TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(
-      dataLineInfo
-    );
-    targetDataLine.open(audioFormat);
-    targetDataLine.start();
-
-    byte[] sendData = new byte[1024];
-
-    InetAddress serverAddress = InetAddress.getByName("localhost");
-
-    int serverPort = 6789;
-
-    while (true) {
-      int bytesRead = targetDataLine.read(sendData, 0, sendData.length);
-
-      DatagramPacket sendPacket = new DatagramPacket(
-        sendData,
-        bytesRead,
-        serverAddress,
-        serverPort
-      );
-      clientSocket.send(sendPacket);
-    }
-  }
-
   private void createNewGroup() throws IOException {
     try {
       while ((message = in.readLine()) != null) {
@@ -160,7 +228,7 @@ public class Lector implements Runnable {
         if (message.startsWith("SUBMITNAME")) {
           System.out.print("\nIngrese nombre del grupo: \n");
         } else if (message.startsWith("NAMEACCEPTED")) {
-          System.out.println("\n¡Nombre del grupo aceptado!\n");
+          System.out.println("\nNombre del grupo aceptado!\n");
           break;
         }
       }

@@ -10,13 +10,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.LineUnavailableException;
 
 public class ClientHandler implements Runnable {
 
@@ -55,7 +53,6 @@ public class ClientHandler implements Runnable {
 
       // Se abre el menú principal
       mainMenu();
-
       String message;
       // esperar mensajes de cada cliente y enviarlo a todos los clientes
       // si el mensaje es dirijido a un cliente en especial, se debe separar el
@@ -69,20 +66,28 @@ public class ClientHandler implements Runnable {
         } else {
           clientes.broadcastMessage(clientName + ": " + message);
         }
+        System.out.println("Se salio del menuu main");
+        out.println("FINISH");
       }
-    } catch (Exception e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        clientSocket.close();
-        System.out.println(clientName + " ha abandonado el chat.\n");
-        clientes.broadcastMessage(
-          clientName + " ha abandonado la aplicacion.\n"
-        );
-        clientes.removeUsr(clientName);
-      } catch (Exception e) {
+    } catch (IOException | LineUnavailableException e) {
+      if (e instanceof SocketException) {
+        //
+      } else {
         e.printStackTrace();
       }
+    } finally {
+      clean();
+    }
+  }
+
+  private void clean() {
+    try {
+      clientSocket.close();
+      System.out.println(clientName + " ha abandonado el chat. en clean\n");
+      clientes.broadcastMessage(clientName + " ha abandonado la aplicacion.\n");
+      clientes.removeUsr(clientName);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
@@ -100,14 +105,26 @@ public class ClientHandler implements Runnable {
             clientName + " se ha unido a la aplicacion.\n"
           );
           out.println("NAMEACCEPTED " + clientName);
-          clientes.addUsr(clientName, out);
+          String userInfo = in.readLine();
+          String[] parts = getUserInfo(userInfo);
+          clientes.addUsr(
+            clientName,
+            out,
+            Integer.parseInt(parts[1]),
+            clientSocket.getInetAddress()
+          );
           break;
         }
       }
     }
   }
 
-  public void mainMenu() throws IOException, Exception {
+  public String[] getUserInfo(String userInfo) {
+    String[] parts = userInfo.split("/");
+    return parts;
+  }
+
+  public void mainMenu() throws IOException, LineUnavailableException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -135,22 +152,21 @@ public class ClientHandler implements Runnable {
     } while (exit == false);
   }
 
-  public int validateIntegerOption() {
+  public int validateIntegerOption() throws IOException {
     int option = 0;
+    String input = in.readLine();
     try {
-      String input = in.readLine();
       option = Integer.parseInt(input);
-    } catch (IOException | NumberFormatException e) {
+    } catch (NumberFormatException e) {
       // Si ocurre una excepcion al leer o convertir el numero,
       // establecer la opcion como -1
       option = -1;
-      e.printStackTrace();
     }
 
     return option;
   }
 
-  private void groupMenu() throws IOException, Exception {
+  private void groupMenu() throws IOException, LineUnavailableException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -189,8 +205,7 @@ public class ClientHandler implements Runnable {
   }
 
   private void chatMenu(Group group, Private privado)
-    throws IOException, Exception {
-    System.out.println("\nDentro de ChatMenu\n");
+    throws IOException, LineUnavailableException {
     int optionMenu = 0;
     boolean exit = false;
     String lastTen = "";
@@ -232,14 +247,13 @@ public class ClientHandler implements Runnable {
           sendMenu(group, privado);
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
   }
 
-  private void listenAudio(Group group, Private privado)
-    throws IOException, Exception {
+  private void listenAudio(Group group, Private privado) throws IOException {
     if (privado == null) {
       if (group.getChatHistory().getAudios().isEmpty()) {
         out.println("\nNo existen audios en este Chat\n");
@@ -260,15 +274,11 @@ public class ClientHandler implements Runnable {
       optionMenu = validateRange(group.getChatHistory().getAudios());
 
       if (optionMenu == 0) {
-        System.out.println("Option 0");
-        chatMenu(group, privado);
         return;
       }
 
       ServerSocket serverSocket = new ServerSocket(12348);
-      System.out.println("Antes del enviar play audio\n");
       out.println("PLAYAUDIO");
-      System.out.println("Envia play audio al cliente\n");
       Socket socket = serverSocket.accept();
       ObjectOutputStream outputStream = new ObjectOutputStream(
         socket.getOutputStream()
@@ -300,15 +310,11 @@ public class ClientHandler implements Runnable {
       optionMenu = validateRange(privado.getChatHistory().getAudios());
 
       if (optionMenu == 0) {
-        System.out.println("Option 0");
-        chatMenu(group, privado);
         return;
       }
 
       ServerSocket serverSocket = new ServerSocket(12348);
-      System.out.println("Antes del enviar play audio\n");
       out.println("PLAYAUDIO");
-      System.out.println("Envia play audio al cliente\n");
       Socket socket = serverSocket.accept();
       ObjectOutputStream outputStream = new ObjectOutputStream(
         socket.getOutputStream()
@@ -342,6 +348,7 @@ public class ClientHandler implements Runnable {
             );
             group.sendMessage(m);
             group.sendAudio(audio);
+            group.notificationGroupWithoutMe("Audio", clientName);
           } else {
             int sizeAudios = privado.getChatHistory().getAudios().size();
             Message m = new Message(
@@ -351,13 +358,7 @@ public class ClientHandler implements Runnable {
             );
             privado.sendMessage(m);
             privado.sendAudio(audio);
-            System.out.println(
-              "Guarde el audio que me envio y lo voy a reproducir: " +
-              clientName +
-              "\n"
-            );
-            AudioRecorderPlayer r = new AudioRecorderPlayer();
-            r.play(audio);
+            privado.notificationPrivateWithoutMe("Audio", clientName);
           }
           in.close();
           socket.close();
@@ -372,7 +373,8 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void sendMenu(Group group, Private privado) throws IOException {
+  private void sendMenu(Group group, Private privado)
+    throws IOException, LineUnavailableException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -393,25 +395,187 @@ public class ClientHandler implements Runnable {
           sendMessage(group, privado);
           break;
         case 2:
-          System.out.println("Se metio al metodo SendAudio");
           sendAudio(group, privado);
           break;
         case 3:
-          out.println("CALLSTARTED");
-          new Thread(() -> {
-            try {
-              playCallToGroup();
-            } catch (Exception e) {
-              e.printStackTrace();
+          if (group != null) {
+            if (group.getCall() != null) {
+              // Existe una llamada
+              out.println("ENTERTOCALL");
+              System.out.println("Se fue pa llamada");
+              groupCall(group, group.getCall().getPort());
+            } else {
+              // No existe una llamada
+              playCallToGroup(group);
             }
-          })
-            .start();
+          } else {
+            if (privado.getCall() != null) {
+              // Existe una llamada
+              out.println("ENTERTOCALL");
+              System.out.println("Se fue pa llamada");
+              privateCall(privado, privado.getCall().getPort());
+            } else {
+              // No existe una llamada
+              playCallToPrivate(privado);
+            }
+          }
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
+  }
+
+  private void playCallToGroup(Group group)
+    throws LineUnavailableException, IOException {
+    Call actualCall = new Call(clientName, clientes.getPerson(clientName));
+    actualCall.setMiembros(group.getMiembros());
+    actualCall.setMiembrosBorrables(group.getCloneMiembros());
+    group.setCall(actualCall);
+    int port = actualCall.getPort();
+    out.println("ENTERTOCALL");
+    group
+      .getCall()
+      .broadcastMessageWithOutUser(
+        clientName,
+        "LLamada Grupal en: " +
+        group.getName() +
+        " de: " +
+        clientName +
+        " porfavor ingrese a la opcion 'Escribir a un grupo' y luego presione la opcion 'Hacer llamada"
+      );
+
+    groupCall(group, port);
+  }
+
+  private void playCallToPrivate(Private privado)
+    throws LineUnavailableException, IOException {
+    Call actualCall = new Call(clientName, clientes.getPerson(clientName));
+    actualCall.setMiembros(privado.getMiembros());
+    actualCall.setMiembrosBorrables(privado.getCloneMiembros());
+    privado.setCall(actualCall);
+    int port = actualCall.getPort();
+    out.println("ENTERTOCALL");
+    privado
+      .getCall()
+      .broadcastMessageWithOutUser(
+        clientName,
+        "LLamada Privada de: " +
+        clientName +
+        " porfavor ingrese a la opcion 'Escribir a un chat' y luego presione la opcion 'Hacer llamada"
+      );
+
+    privateCall(privado, port);
+  }
+
+  private void privateCall(Private privado, int port)
+    throws LineUnavailableException, IOException {
+    Call actualCall = privado.getCall();
+    DatagramSocket serverSocket = actualCall.getSocket_UDP();
+    Thread callThread = new Thread(() -> {
+      try {
+        byte[] receiveData = new byte[800];
+        Person p = privado.getOtherPerson(clientName);
+        // Enviar Datagramas a todos menos a si mismo
+        while (true) {
+          DatagramPacket receivePacket = new DatagramPacket(
+            receiveData,
+            receiveData.length
+          );
+          serverSocket.receive(receivePacket);
+
+          DatagramPacket sendPacket = new DatagramPacket(
+            receivePacket.getData(),
+            receivePacket.getLength(),
+            p.getAddress(),
+            p.getPort()
+          );
+          try {
+            serverSocket.send(sendPacket);
+          } catch (IOException e) {
+            if (e instanceof SocketException) {
+              System.out.println("Fin de la llamada");
+            } else {
+              e.printStackTrace();
+            }
+          }
+        }
+      } catch (Exception e) {
+        if (e instanceof SocketException) {
+          System.out.println("Fin de la llamada");
+        } else {
+          e.printStackTrace();
+        }
+      }
+    });
+    callThread.start();
+    out.println("Para colgar la llamada presione '0'");
+    while (true) {
+      if (in.readLine().equals("0")) {
+        out.println("STOPCALL");
+        callThread.interrupt();
+        serverSocket.close();
+        privado.setCall(null);
+        return;
+      }
+    }
+  }
+
+  private void groupCall(Group group, int port)
+    throws LineUnavailableException, IOException {
+    Call actualCall = group.getCall();
+    DatagramSocket serverSocket = actualCall.getSocket_UDP();
+    Thread callThread = new Thread(() -> {
+      try {
+        byte[] receiveData = new byte[800];
+
+        // Enviar Datagramas a todos menos a si mismo
+        while (true) {
+          DatagramPacket receivePacket = new DatagramPacket(
+            receiveData,
+            receiveData.length
+          );
+          serverSocket.receive(receivePacket);
+          for (Person member : group.getMiembros()) {
+            if (!member.getName().equals(clientName)) {
+              DatagramPacket sendPacket = new DatagramPacket(
+                receivePacket.getData(),
+                receivePacket.getLength(),
+                member.getAddress(),
+                member.getPort()
+              );
+              try {
+                serverSocket.send(sendPacket);
+              } catch (IOException e) {
+                if (e instanceof SocketException) {
+                  System.out.println("Fin de la llamada");
+                } else {
+                  e.printStackTrace();
+                }
+              }
+            }
+          }
+        }
+      } catch (Exception e) {
+        if (e instanceof SocketException) {
+          System.out.println("Fin de la llamada");
+        } else {
+          e.printStackTrace();
+        }
+      }
+    });
+    callThread.start();
+    out.println("Para colgar la llamada presione '0'");
+    while (true) {
+      if (in.readLine().equals("0")) {
+        out.println("STOPCALL");
+        callThread.interrupt();
+        serverSocket.close();
+        group.setCall(null);
+        return;
+      }
+    }
   }
 
   private void sendMessage(Group group, Private privado) throws IOException {
@@ -425,49 +589,24 @@ public class ClientHandler implements Runnable {
     // Si es privado o al grupo lo manda
     if (privado == null) {
       group.sendMessage(m);
+      group.notificationGroupWithoutMe("Mensaje", clientName);
     } else {
       privado.sendMessage(m);
+      privado.notificationPrivateWithoutMe("Mensaje", clientName);
     }
     out.println("\n --------- Mensaje enviado --------- \n");
   }
 
-  private static void playCallToGroup() throws Exception {
-    DatagramSocket serverSocket = new DatagramSocket(6789);
-    System.out.println("\nServer started. Waiting for clients...\n");
-
-    // Configurar la línea de audio para reproducir el audio recibido
-    AudioFormat audioFormat = new AudioFormat(44100.0f, 16, 2, true, false);
-    DataLine.Info dataLineInfo = new DataLine.Info(
-      SourceDataLine.class,
-      audioFormat
-    );
-    SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(
-      dataLineInfo
-    );
-    sourceDataLine.open(audioFormat);
-    sourceDataLine.start();
-
-    byte[] receiveData = new byte[1024];
-
-    while (true) {
-      DatagramPacket receivePacket = new DatagramPacket(
-        receiveData,
-        receiveData.length
-      );
-      serverSocket.receive(receivePacket);
-
-      // Reproducir audio
-      sourceDataLine.write(
-        receivePacket.getData(),
-        0,
-        receivePacket.getLength()
-      );
-    }
-  }
-
-  private void writeToGroup() throws IOException, Exception {
+  private void writeToGroup() throws IOException, LineUnavailableException {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
+
+    if (listaGrupos.isEmpty()) {
+      out.println(
+        "No existen grupos creados, intenta la opcion 'Crear un nuevo grupo'"
+      );
+      return;
+    }
 
     out.println(
       "MENU\n----------\nGrupos Registrados\n---------- \n\nSeleccione un grupo para ingresar:\n 0) Salir del menu\n"
@@ -476,15 +615,9 @@ public class ClientHandler implements Runnable {
     // Imprimir grupos
     out.println(grupos.printMyGroups(clientName));
 
-    if (grupos.printMyGroups(clientName).equals("No existen grupos creados")) {
-      groupMenu();
-      return;
-    }
-
     optionMenu = validateRange(listaGrupos);
 
     if (optionMenu == 0) {
-      groupMenu();
       return;
     }
 
@@ -498,9 +631,16 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void joinToGroup() throws IOException, Exception {
+  private void joinToGroup() throws IOException {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
     int optionMenu = 0;
+
+    if (listaGrupos.isEmpty()) {
+      out.println(
+        "No existen grupos creados, intenta la opcion 'Crear un nuevo grupo'"
+      );
+      return;
+    }
 
     out.println(
       "MENU\n----------\nGrupos Registrados\n---------- \n\nSeleccione un grupo para ingresar:\n 0) Salir del menu\n"
@@ -509,14 +649,9 @@ public class ClientHandler implements Runnable {
     // Imprimir grupos
     out.println(grupos.printGroups() + "\n");
 
-    if (grupos.printGroups().equals("No existen grupos creados")) {
-      groupMenu();
-    }
-
     optionMenu = validateRange(listaGrupos);
 
     if (optionMenu == 0) {
-      groupMenu();
       return;
     }
 
@@ -525,7 +660,7 @@ public class ClientHandler implements Runnable {
       out.println("\nEl usuario ya esta en el grupo no puede ingresar\n");
     } else {
       out.println(
-        "\nAñadiendo a " +
+        "\nIngresando al usuario " +
         clientName +
         " al grupo: " +
         listaGrupos.get(optionMenu - 1).getName() +
@@ -538,7 +673,7 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private int validateRange(List listToValidate) {
+  private int validateRange(List listToValidate) throws IOException {
     int option = validateIntegerOption();
 
     while ((option >= listToValidate.size() + 1) || (option < 0)) {
@@ -553,17 +688,14 @@ public class ClientHandler implements Runnable {
     while (true) {
       out.println("SUBMITNAME");
       groupName = in.readLine().trim();
-      System.out.println("\nLlego: " + groupName + "\n");
       if (groupName == null) {
         return;
       }
-      System.out.println("\nVa a sincronizzar\n"); // -------------------------
+      // sincronizando
       synchronized (groupName) {
         if (!groupName.isBlank() && !grupos.existeGroup(groupName)) {
-          // grupos.broadcastMessage(groupName + " se ha unido al chat.");
-          System.out.println("\nEntro a la condicion\n"); // -------------------
+          clientes.broadcastMessage("Nuevo grupo creado: " + groupName);
           out.println("NAMEACCEPTED");
-          System.out.println("\nSe envio\n");
           grupos.addGroup(groupName, out, clientes.getPerson(clientName));
           break;
         }
@@ -571,10 +703,16 @@ public class ClientHandler implements Runnable {
     }
   }
 
-  private void membersOfAGroup() throws IOException, Exception {
+  private void membersOfAGroup() throws IOException {
     List<Group> listaGrupos = new ArrayList<>(grupos.getGroups());
-
     int optionMenu = 0;
+
+    if (listaGrupos.isEmpty()) {
+      out.println(
+        "No existen grupos creados, intenta la opcion 'Crear un nuevo grupo'"
+      );
+      return;
+    }
 
     out.println(
       "MENU\n----------\nVer miembros de un grupo\n---------- \n\nSeleccione un grupo para ver sus miembros:\n 0) Salir del menu\n"
@@ -586,7 +724,6 @@ public class ClientHandler implements Runnable {
     optionMenu = validateRange(listaGrupos);
 
     if (optionMenu == 0) {
-      groupMenu();
       return;
     }
 
@@ -594,7 +731,7 @@ public class ClientHandler implements Runnable {
     out.println(listaGrupos.get(optionMenu - 1).printMembers() + "\n");
   }
 
-  private void privateMenu() throws IOException, Exception {
+  private void privateMenu() throws IOException, LineUnavailableException {
     int optionMenu = 0;
     boolean exit = false;
     do {
@@ -616,13 +753,13 @@ public class ClientHandler implements Runnable {
           writeToPrivate();
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
   }
 
-  private void writeToPrivate() throws IOException, Exception {
+  private void writeToPrivate() throws IOException, LineUnavailableException {
     List<Private> listaPrivados = new ArrayList<>(
       privados.getMyPrivates(clientName)
     );
@@ -649,12 +786,8 @@ public class ClientHandler implements Runnable {
       return;
     }
 
-    // Iniciando chat con el privado y enviando los mensajes al historial del grupo
-    // selecccionado
-    System.out.println("\nEstoy antes del are you\n");
     if (listaPrivados.get(optionMenu - 1).areYouHereInThisPrivate(clientName)) {
-      // El usuario si está en el privadp y puede entrar al menú del Chat
-      System.out.println("\nDentro de are you\n");
+      // El usuario si está en el privado y puede entrar al menú del Chat
       chatMenu(null, listaPrivados.get(optionMenu - 1));
     } else {
       out.println("\nNo estas en este privado, bye bye\n");
@@ -664,14 +797,6 @@ public class ClientHandler implements Runnable {
   private String printListMyPrivates(List<Private> list, String client) {
     String m = "";
     for (int i = 0; i < list.size(); i++) {
-      System.out.println(
-        "\nSoy yooooooooooo:" +
-        list.get(i).getPerson1().getName() +
-        ":vs:" +
-        client +
-        ":"
-      );
-      System.out.println(list.get(i).getPerson1().getName().equals(client));
       if (list.get(i).getPerson1().getName().equals(client)) {
         m += ((i + 1) + ") " + list.get(i).getPerson2().getName() + "\n");
       } else {
@@ -681,25 +806,21 @@ public class ClientHandler implements Runnable {
     return m;
   }
 
-  private void createChatPrivate() throws IOException, Exception {
+  private void createChatPrivate()
+    throws IOException, LineUnavailableException {
     List<Person> listaClientes = new ArrayList<>(clientes.getClientes());
-
     int optionMenu = 0;
+
+    if (listaClientes.isEmpty()) {
+      out.println("\nNo existen mas usuarios por ahora! \n");
+      return;
+    }
 
     out.println(
       "MENU\n----------\nPersonas de la aplicacion\n---------- \n\nSeleccione una persona para iniciar un Chat Privado:\n 0) Salir del menu\n"
     );
 
     // Imprimir los clientes para crear el nuevo Privado
-    if (
-      clientes
-        .printClientesWithoutMe(clientName)
-        .equals("No hay mas personas en el servidor")
-    ) {
-      out.println("\n ¡No existen mas usuarios por ahora! \n");
-      privateMenu();
-      return;
-    }
     out.println(clientes.printClientesWithoutMe(clientName));
 
     optionMenu = validateRange(listaClientes);
@@ -727,10 +848,12 @@ public class ClientHandler implements Runnable {
         clientName +
         "\n"
       );
-      privados.addPrivate(
+      Private p = new Private(
         clientes.getPerson(clientName),
         clientes.getPerson(other)
       );
+      privados.addPrivate(p);
+      p.notificationPrivateWithoutMe("Nuevo Privado creado ", clientName);
     }
   }
 }
