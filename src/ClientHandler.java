@@ -182,6 +182,7 @@ public class ClientHandler implements Runnable {
       switch (optionMenu) {
         case 0:
           exit = true;
+          mainMenu();
           break;
         case 1:
           out.println("CREATENEWGROUP");
@@ -198,7 +199,7 @@ public class ClientHandler implements Runnable {
           membersOfAGroup();
           break;
         default:
-          out.println("\n------------------\n¡Opcion incorrecta!\n");
+          out.println("\n------------------\nOpcion incorrecta!\n");
           break;
       }
     } while (exit == false);
@@ -825,11 +826,13 @@ public class ClientHandler implements Runnable {
 
     optionMenu = validateRange(listaClientes);
 
+    if (optionMenu == 0) {
+      return;
+    }
     if (
-      optionMenu == 0 ||
       listaClientes.get(optionMenu - 1).equals(clientes.getPerson(clientName))
     ) {
-      out.println("\n ¿Para que quieres un grupo contigo mismo? \n");
+      out.println("\nPara que quieres un chat o u un grupo contigo mismo? \n");
       privateMenu();
       return;
     }
@@ -842,7 +845,7 @@ public class ClientHandler implements Runnable {
       );
     } else {
       out.println(
-        "\n Creando un nuevo Chat privado entre " +
+        "\nSe creo un nuevo Chat privado entre " +
         other +
         " y " +
         clientName +

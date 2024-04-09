@@ -15,7 +15,7 @@ public class Client {
   public static void main(String[] args) {
     try {
       Socket socket = new Socket(SERVER_IP, PORT);
-      System.out.println("\nConectado al servidor.\n");
+      System.out.println("\nConectado al servidor.");
       String message;
       BufferedReader userInput = new BufferedReader(
         new InputStreamReader(System.in)
