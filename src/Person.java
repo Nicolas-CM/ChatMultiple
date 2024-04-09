@@ -1,18 +1,26 @@
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.Socket;
 
 //
 public class Person implements Cloneable {
 
   private String name;
   PrintWriter out;
-  private int port;
   private InetAddress address;
+  private Socket call;
 
-  public Person(String name, PrintWriter out, int port, InetAddress address) {
+  public Socket getCall() {
+    return call;
+  }
+
+  public void setCall(Socket call) {
+    this.call = call;
+  }
+
+  public Person(String name, PrintWriter out, InetAddress address) {
     this.name = name;
     this.out = out;
-    this.port = port;
     this.address = address;
   }
 
@@ -30,14 +38,6 @@ public class Person implements Cloneable {
 
   public void setOut(PrintWriter out) {
     this.out = out;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public void setPort(int port) {
-    this.port = port;
   }
 
   public InetAddress getAddress() {

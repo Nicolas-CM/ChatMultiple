@@ -1,11 +1,11 @@
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -28,16 +28,18 @@ public class Lector implements Runnable {
   SourceDataLine speakers;
   volatile boolean stopCall;
   AudioFormat format;
-  DatagramSocket callSocket;
+  Socket callSocket;
   int serverSocketUDP;
   InetAddress ipInetAddress;
+
+  OutputStream callOutputStream;
+  InputStream callInputStream;
 
   public Lector(
     BufferedReader in,
     PrintWriter out,
     String adress,
-    int serverSocketUDP,
-    DatagramSocket callSocket
+    int serverSocketUDP
   ) throws LineUnavailableException, UnknownHostException {
     this.in = in;
     this.out = out;
@@ -46,8 +48,7 @@ public class Lector implements Runnable {
     this.microphone = AudioSystem.getTargetDataLine(format);
     this.speakers = AudioSystem.getSourceDataLine(format);
     this.stopCall = false;
-    this.callSocket = callSocket;
-    this.format = new AudioFormat(24000.0f, 16, 1, true, true);
+    this.format = new AudioFormat(44100, 16, 1, true, false);
     this.serverSocketUDP = serverSocketUDP;
     this.userInput = new BufferedReader(new InputStreamReader(System.in));
     this.ipInetAddress = InetAddress.getByName(adress);
@@ -85,6 +86,16 @@ public class Lector implements Runnable {
   public void call() {
     stopCall = false;
     // Crear e iniciar un hilo para enviar voz
+    try {
+      callSocket = new Socket(adress, serverSocketUDP);
+      callInputStream = callSocket.getInputStream();
+      callOutputStream = callSocket.getOutputStream();
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
     Thread sendVoiceThread = new Thread(() -> {
       sendVoice();
     });
@@ -112,25 +123,19 @@ public class Lector implements Runnable {
 
   public void sendVoice() {
     try {
+      byte[] buffer = new byte[1024];
+      int bytesRead;
       microphone.open(format);
       microphone.start();
 
-      byte[] buffer = new byte[800];
-      DatagramPacket packet;
-
-      System.out.println("Llamando");
-
+      // Flujo de salida para enviar datos
       while (!stopCall) {
-        int bytesRead = microphone.read(buffer, 0, buffer.length);
-        packet =
-          new DatagramPacket(buffer, bytesRead, ipInetAddress, serverSocketUDP);
-        try {
-          callSocket.send(packet);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+        bytesRead = microphone.read(buffer, 0, buffer.length);
+        callOutputStream.write(buffer, 0, bytesRead);
       }
     } catch (LineUnavailableException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
       e.printStackTrace();
     }
   }
@@ -140,12 +145,11 @@ public class Lector implements Runnable {
       speakers.open(format);
       speakers.start();
 
-      byte[] buffer = new byte[800];
-
-      DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-      while (!stopCall) {
-        callSocket.receive(packet);
-        speakers.write(packet.getData(), 0, packet.getLength());
+      // Flujo de entrada para recibir datos
+      byte[] buffer = new byte[1024];
+      int bytesRead;
+      while (!stopCall && (bytesRead = callInputStream.read(buffer)) != -1) {
+        speakers.write(buffer, 0, bytesRead); // Escritura de datos recibidos en el altavoz
       }
     } catch (LineUnavailableException e) {
       e.printStackTrace();

@@ -68,7 +68,7 @@ public class Chatters {
     InetAddress address
   ) {
     if (!name.isBlank() && !existeUsr(name)) {
-      Person p = new Person(name, out, port, address);
+      Person p = new Person(name, out, address);
       clientes.add(p);
     }
   }

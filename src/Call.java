@@ -1,209 +1,208 @@
-import java.net.DatagramSocket;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
 import java.util.Random;
+import java.util.Set;
 
 public class Call {
 
-    public final static int PORT_UDP = 8888;
-    private String name;
-    private Set<Person> miembros = new HashSet<>();
-    private Set<Person> miembrosBorrables = new HashSet<>();
-    private int port;
-    private DatagramSocket socket_UDP;
+  private String name;
+  private Set<Person> miembros = new HashSet<>();
+  private Set<Person> miembrosBorrables = new HashSet<>();
+  private int port;
+  private ServerSocket socket_UDP;
 
-    private Person creator;
+  private Person creator;
 
-    public Call(String name, Person creator) {
-        this.name = name;
-        this.creator = creator;
-        this.miembros.add(creator);
-        try {
-            this.socket_UDP = new DatagramSocket(PORT_UDP);
-        } catch (SocketException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+  public Call(String name, Person creator, int port) throws IOException {
+    this.name = name;
+    this.creator = creator;
+    this.miembros.add(creator);
+    try {
+      this.socket_UDP = new ServerSocket(port);
+    } catch (SocketException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    generateRandomPort();
+  }
+
+  private void generateRandomPort() {
+    Random random = new Random();
+    // Definir un rango de puertos válidos
+    int minPort = 8000; // Puertos reservados generalmente para servicios del sistema
+    int maxPort = 49151; // Puertos registrados
+    int range = maxPort - minPort + 1;
+
+    // Generar un número de puerto aleatorio dentro del rango
+    port = random.nextInt(range) + minPort;
+
+    // Verificar si el puerto está en uso
+    while (isPortInUse(port)) {
+      port = random.nextInt(range) + minPort;
+    }
+  }
+
+  private boolean isPortInUse(int port) {
+    try (ServerSocket ignored = new ServerSocket(port)) {
+      // Si la creación del ServerSocket es exitosa, significa que el puerto no está
+      // en uso
+      return false;
+    } catch (Exception e) {
+      // Si se produce una excepción, significa que el puerto está en uso
+      return true;
+    }
+  }
+
+  /*
+   * public void callToGroup(String name, int serverPort) {
+   * for (Person p : miembros) {
+   * if (!name.equals(p.getName())) {
+   * try {
+   * if (p.getLector().answerTheCall().equals("1")) {
+   * p.getLector().callToGroup(serverPort);
+   * }
+   * } catch (Exception e) {
+   * e.printStackTrace();
+   * }
+   * break;
+   * } else {
+   * try {
+   *
+   * p.getLector().callToGroup(serverPort);
+   * } catch (Exception e) {
+   * e.printStackTrace();
+   * }
+   * }
+   * }
+   * verifyCall(name);
+   * }
+   *
+   *
+   * public void verifyCall(String name) {
+   * new Thread(() -> {
+   * while (true) {
+   * for (Person p : miembros) {
+   * if (p.getLector().getIsInCall() == 0) {
+   * deleteUser(p.getName());
+   * }
+   * }
+   * if (miembros.isEmpty()) {
+   * break;
+   * }
+   * }
+   * }).start();
+   * }
+   */
+
+  public Person getPerson(String name) {
+    if (existeUsr(name)) {
+      for (Person person : miembros) {
+        if (person.getName().equals(name)) {
+          return person;
         }
-        generateRandomPort();
+      }
     }
+    return null;
+  }
 
-    private void generateRandomPort() {
-        Random random = new Random();
-        // Definir un rango de puertos válidos
-        int minPort = 8000; // Puertos reservados generalmente para servicios del sistema
-        int maxPort = 49151; // Puertos registrados
-        int range = maxPort - minPort + 1;
-
-        // Generar un número de puerto aleatorio dentro del rango
-        port = random.nextInt(range) + minPort;
-
-        // Verificar si el puerto está en uso
-        while (isPortInUse(port)) {
-            port = random.nextInt(range) + minPort;
-        }
+  public boolean existeUsr(String name) {
+    boolean response = false;
+    for (Person p : miembros) {
+      if (name.equals(p.getName())) {
+        response = true;
+        break;
+      }
     }
+    return response;
+  }
 
-    private boolean isPortInUse(int port) {
-        try (ServerSocket ignored = new ServerSocket(port)) {
-            // Si la creación del ServerSocket es exitosa, significa que el puerto no está
-            // en uso
-            return false;
-        } catch (Exception e) {
-            // Si se produce una excepción, significa que el puerto está en uso
-            return true;
-        }
+  public boolean deleteUser(String name) {
+    boolean response = false;
+    for (Person p : miembros) {
+      if (name.equals(p.getName())) {
+        miembros.remove(p);
+        response = true;
+        break;
+      }
     }
+    return response;
+  }
 
-    /*
-     * public void callToGroup(String name, int serverPort) {
-     * for (Person p : miembros) {
-     * if (!name.equals(p.getName())) {
-     * try {
-     * if (p.getLector().answerTheCall().equals("1")) {
-     * p.getLector().callToGroup(serverPort);
-     * }
-     * } catch (Exception e) {
-     * e.printStackTrace();
-     * }
-     * break;
-     * } else {
-     * try {
-     * 
-     * p.getLector().callToGroup(serverPort);
-     * } catch (Exception e) {
-     * e.printStackTrace();
-     * }
-     * }
-     * }
-     * verifyCall(name);
-     * }
-     * 
-     * 
-     * public void verifyCall(String name) {
-     * new Thread(() -> {
-     * while (true) {
-     * for (Person p : miembros) {
-     * if (p.getLector().getIsInCall() == 0) {
-     * deleteUser(p.getName());
-     * }
-     * }
-     * if (miembros.isEmpty()) {
-     * break;
-     * }
-     * }
-     * }).start();
-     * }
-     */
+  public void deleteRandomUser() {
+    List<Person> list = new ArrayList<>(miembrosBorrables);
+    int index = (list.size() - 1);
+    miembrosBorrables.remove(list.get(index));
+  }
 
-    public Person getPerson(String name) {
-        if (existeUsr(name)) {
-            for (Person person : miembros) {
-                if (person.getName().equals(name)) {
-                    return person;
-                }
-            }
-        }
-        return null;
+  public void broadcastMessageWithOutUser(String name, String message) {
+    for (Person p : miembros) {
+      if (!p.getName().equals(name)) {
+        p.getOut().println(message);
+      }
     }
+  }
 
-    public boolean existeUsr(String name) {
-        boolean response = false;
-        for (Person p : miembros) {
-            if (name.equals(p.getName())) {
-                response = true;
-                break;
-            }
-        }
-        return response;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public boolean deleteUser(String name) {
-        boolean response = false;
-        for (Person p : miembros) {
-            if (name.equals(p.getName())) {
-                miembros.remove(p);
-                response = true;
-                break;
-            }
-        }
-        return response;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public void deleteRandomUser() {
-        List<Person> list = new ArrayList<>(miembrosBorrables);
-        int index = (list.size() - 1);
-        miembrosBorrables.remove(list.get(index));
-    }
+  public Set<Person> getMiembros() {
+    return miembros;
+  }
 
-    public void broadcastMessageWithOutUser(String name, String message) {
-        for (Person p : miembros) {
-            if (!p.getName().equals(name)) {
-                p.getOut().println(message);
-            }
-        }
-    }
+  public void setMiembros(Set<Person> miembros) {
+    this.miembros = miembros;
+  }
 
-    public String getName() {
-        return name;
-    }
+  /**
+   * @return Person return the creator
+   */
+  public Person getCreator() {
+    return creator;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  /**
+   * @param creator the creator to set
+   */
+  public void setCreator(Person creator) {
+    this.creator = creator;
+  }
 
-    public Set<Person> getMiembros() {
-        return miembros;
-    }
+  public void setPort(int port) {
+    this.port = port;
+  }
 
-    public void setMiembros(Set<Person> miembros) {
-        this.miembros = miembros;
-    }
+  public int getPort() {
+    return port;
+  }
 
-    /**
-     * @return Person return the creator
-     */
-    public Person getCreator() {
-        return creator;
-    }
+  public Set<Person> getMiembrosBorrables() {
+    return miembrosBorrables;
+  }
 
-    /**
-     * @param creator the creator to set
-     */
-    public void setCreator(Person creator) {
-        this.creator = creator;
-    }
+  public void setMiembrosBorrables(Set<Person> miembrosBorrables) {
+    this.miembrosBorrables = miembrosBorrables;
+  }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
+  /**
+   * @return ServerSocket return the socket_UDP
+   */
+  public ServerSocket getSocket_UDP() {
+    return socket_UDP;
+  }
 
-    public int getPort() {
-        return port;
-    }
-
-    public Set<Person> getMiembrosBorrables() {
-        return miembrosBorrables;
-    }
-
-    public void setMiembrosBorrables(Set<Person> miembrosBorrables) {
-        this.miembrosBorrables = miembrosBorrables;
-    }
-
-    public static int getPortUdp() {
-        return PORT_UDP;
-    }
-
-    public DatagramSocket getSocket_UDP() {
-        return socket_UDP;
-    }
-
-    public void setSocket_UDP(DatagramSocket socket_UDP) {
-        this.socket_UDP = socket_UDP;
-    }
-
+  /**
+   * @param socket_UDP the socket_UDP to set
+   */
+  public void setSocket_UDP(ServerSocket socket_UDP) {
+    this.socket_UDP = socket_UDP;
+  }
 }

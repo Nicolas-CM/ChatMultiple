@@ -2,12 +2,12 @@
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -26,6 +26,8 @@ public class ClientHandler implements Runnable {
   Chatters clientes;
   Comunity grupos;
   Personals privados;
+  int callPort;
+  InputStream callEntrada;
 
   public ClientHandler(
     Socket socket,
@@ -37,6 +39,7 @@ public class ClientHandler implements Runnable {
     this.clientSocket = socket;
     this.grupos = grupos;
     this.privados = privados;
+    this.callPort = 9999;
     try {
       in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
       out = new PrintWriter(socket.getOutputStream(), true); // Se inicializa el flujo de salida aquí
@@ -182,7 +185,6 @@ public class ClientHandler implements Runnable {
       switch (optionMenu) {
         case 0:
           exit = true;
-          mainMenu();
           break;
         case 1:
           out.println("CREATENEWGROUP");
@@ -430,7 +432,11 @@ public class ClientHandler implements Runnable {
 
   private void playCallToGroup(Group group)
     throws LineUnavailableException, IOException {
-    Call actualCall = new Call(clientName, clientes.getPerson(clientName));
+    Call actualCall = new Call(
+      clientName,
+      clientes.getPerson(clientName),
+      callPort
+    );
     actualCall.setMiembros(group.getMiembros());
     actualCall.setMiembrosBorrables(group.getCloneMiembros());
     group.setCall(actualCall);
@@ -452,7 +458,11 @@ public class ClientHandler implements Runnable {
 
   private void playCallToPrivate(Private privado)
     throws LineUnavailableException, IOException {
-    Call actualCall = new Call(clientName, clientes.getPerson(clientName));
+    Call actualCall = new Call(
+      clientName,
+      clientes.getPerson(clientName),
+      callPort
+    );
     actualCall.setMiembros(privado.getMiembros());
     actualCall.setMiembrosBorrables(privado.getCloneMiembros());
     privado.setCall(actualCall);
@@ -473,36 +483,23 @@ public class ClientHandler implements Runnable {
   private void privateCall(Private privado, int port)
     throws LineUnavailableException, IOException {
     Call actualCall = privado.getCall();
-    DatagramSocket serverSocket = actualCall.getSocket_UDP();
+    ServerSocket serverSocket = actualCall.getSocket_UDP(); // Obtenemos el socket TCP
     Thread callThread = new Thread(() -> {
       try {
-        byte[] receiveData = new byte[800];
-        Person p = privado.getOtherPerson(clientName);
-        // Enviar Datagramas a todos menos a si mismo
         while (true) {
-          DatagramPacket receivePacket = new DatagramPacket(
-            receiveData,
-            receiveData.length
-          );
-          serverSocket.receive(receivePacket);
+          Socket clientSocket = serverSocket.accept(); // Aceptamos la conexión del cliente
+          Person p = privado.getOtherPerson(clientName);
+          InputStream inFromClient = clientSocket.getInputStream(); // Flujo de entrada del cliente
+          OutputStream outToClient = clientSocket.getOutputStream(); // Flujo de salida hacia el cliente
 
-          DatagramPacket sendPacket = new DatagramPacket(
-            receivePacket.getData(),
-            receivePacket.getLength(),
-            p.getAddress(),
-            p.getPort()
-          );
-          try {
-            serverSocket.send(sendPacket);
-          } catch (IOException e) {
-            if (e instanceof SocketException) {
-              System.out.println("Fin de la llamada");
-            } else {
-              e.printStackTrace();
-            }
+          byte[] buffer = new byte[800];
+          int bytesRead;
+          // Enviamos datos al cliente
+          while ((bytesRead = inFromClient.read(buffer)) != -1) {
+            outToClient.write(buffer, 0, bytesRead);
           }
         }
-      } catch (Exception e) {
+      } catch (IOException e) {
         if (e instanceof SocketException) {
           System.out.println("Fin de la llamada");
         } else {
@@ -526,39 +523,26 @@ public class ClientHandler implements Runnable {
   private void groupCall(Group group, int port)
     throws LineUnavailableException, IOException {
     Call actualCall = group.getCall();
-    DatagramSocket serverSocket = actualCall.getSocket_UDP();
+    ServerSocket serverSocket = actualCall.getSocket_UDP(); // Obtenemos el socket TCP
     Thread callThread = new Thread(() -> {
       try {
-        byte[] receiveData = new byte[800];
+        clientes.getPerson(clientName).setCall(serverSocket.accept());
+        Socket recibe = clientes.getPerson(clientName).getCall();
+        callEntrada = recibe.getInputStream(); // Flujo de entrada del cliente
+        byte[] buffer = new byte[1024];
 
-        // Enviar Datagramas a todos menos a si mismo
-        while (true) {
-          DatagramPacket receivePacket = new DatagramPacket(
-            receiveData,
-            receiveData.length
-          );
-          serverSocket.receive(receivePacket);
+        int bytesRead;
+
+        while ((bytesRead = callEntrada.read(buffer)) != -1) {
           for (Person member : group.getMiembros()) {
             if (!member.getName().equals(clientName)) {
-              DatagramPacket sendPacket = new DatagramPacket(
-                receivePacket.getData(),
-                receivePacket.getLength(),
-                member.getAddress(),
-                member.getPort()
-              );
-              try {
-                serverSocket.send(sendPacket);
-              } catch (IOException e) {
-                if (e instanceof SocketException) {
-                  System.out.println("Fin de la llamada");
-                } else {
-                  e.printStackTrace();
-                }
+              if (member.getCall() != null) {
+                member.getCall().getOutputStream().write(buffer);
               }
             }
           }
         }
-      } catch (Exception e) {
+      } catch (IOException e) {
         if (e instanceof SocketException) {
           System.out.println("Fin de la llamada");
         } else {
@@ -569,7 +553,7 @@ public class ClientHandler implements Runnable {
     callThread.start();
     out.println("Para colgar la llamada presione '0'");
     while (true) {
-      if (in.readLine().equals("0")) {
+      if (in.readLine().equals("0") || group.getCall() != null) {
         out.println("STOPCALL");
         callThread.interrupt();
         serverSocket.close();
