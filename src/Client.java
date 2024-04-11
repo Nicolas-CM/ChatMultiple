@@ -7,7 +7,7 @@ import javax.sound.sampled.LineUnavailableException;
 
 public class Client {
 
-  private static final String SERVER_IP = "127.0.0.1";
+  private static final String SERVER_IP = "192.168.93.242";
   private static final int PORT = 6789;
   private static final int PORT_UDP = 9999;
 

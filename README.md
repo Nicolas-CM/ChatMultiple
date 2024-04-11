@@ -66,3 +66,32 @@ Entonces cuando se reciba el mensaje se debe empezar a navegar por los menus has
 12. Esta misma lógica se aplica para los chats privados
 13. Para poder devolverse a un menú anterior, como se indica en este último, debe digitar el número "0" que corresponde a "Salir del menú"
 14. Si desea salir del chat, debe devolverse hasta el primer menú y volver a digitar el número "0"
+
+### Importante:
+
+15. Si desea conectarse entre diferentes computadores, deben estar conectados bajo la misma red
+16. Una vez estén conectados en la misma red y antes de compilar el programa, deben utilizar el comando: "ipconfig" en su powershell
+17. Después de esto, saldrá lo siguiente:
+Configuración IP de Windows
+
+
+Adaptador de LAN inalámbrica Conexión de área local* 1:
+
+   Estado de los medios. . . . . . . . . . . : medios desconectados
+   Sufijo DNS específico para la conexión. . :
+
+Adaptador de LAN inalámbrica Conexión de área local* 2:
+
+   Estado de los medios. . . . . . . . . . . : medios desconectados
+   Sufijo DNS específico para la conexión. . :
+
+Adaptador de LAN inalámbrica Wi-Fi:
+
+   Sufijo DNS específico para la conexión. . :
+   Vínculo: dirección IPv6 local. . . : fe80::91d9:610d:716d:f08f%5
+   Dirección IPv4. . . . . . . . . . . . . . : 192.168.93.242
+   Máscara de subred . . . . . . . . . . . . : 255.255.255.0
+   Puerta de enlace predeterminada . . . . . : 192.168.93.103
+
+18. Deben copiar la dirección IPV4, que en este caso es: "192.168.93.242" y pegarla en la linea de código número 12 de la clase Client, más detalladamente en la variable: "SERVER_IP"
+19. Posterior a ello, ya pueden realizar el paso 1.
