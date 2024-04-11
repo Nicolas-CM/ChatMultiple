@@ -74,24 +74,18 @@ Entonces cuando se reciba el mensaje se debe empezar a navegar por los menus has
 17. Después de esto, saldrá lo siguiente:
 Configuración IP de Windows
 
-
-Adaptador de LAN inalámbrica Conexión de área local* 1:
-
-   Estado de los medios. . . . . . . . . . . : medios desconectados
-   Sufijo DNS específico para la conexión. . :
-
-Adaptador de LAN inalámbrica Conexión de área local* 2:
-
-   Estado de los medios. . . . . . . . . . . : medios desconectados
-   Sufijo DNS específico para la conexión. . :
-
 Adaptador de LAN inalámbrica Wi-Fi:
 
    Sufijo DNS específico para la conexión. . :
+
    Vínculo: dirección IPv6 local. . . : fe80::91d9:610d:716d:f08f%5
+
    Dirección IPv4. . . . . . . . . . . . . . : 192.168.93.242
+
    Máscara de subred . . . . . . . . . . . . : 255.255.255.0
+
    Puerta de enlace predeterminada . . . . . : 192.168.93.103
 
-18. Deben copiar la dirección IPV4, que en este caso es: "192.168.93.242" y pegarla en la linea de código número 12 de la clase Client, más detalladamente en la variable: "SERVER_IP"
+
+18. Se debe copiar la dirección IPV4, que en este caso es: "192.168.93.242" y pegarla en la linea de código número 12 de la clase Client, más detalladamente en la variable: "SERVER_IP"
 19. Posterior a ello, ya pueden realizar el paso 1.
